@@ -17,6 +17,9 @@ on:
   repository_dispatch:
     types: [source-updated]
 
+permissions:
+  contents: write   # needed so the workflow can commit the synced files + APK version bump back to this repo
+
 env:
   SOURCE_REPO: "somboy015c/almubarak"
   SOURCE_BRANCH: "main"
@@ -125,6 +128,6 @@ jobs:
           echo "${{ steps.source.outputs.latest_sha }}" > .sync/last-source.sha
           git config user.name "elmubarak-bot"
           git config user.email "bot@elmubarak.local"
-          git add .sync/last-source.sha www/login.html www/register.html www/dashboard.html www/admin.html www/css www/js android
+          git add .sync/last-source.sha www/login.html www/register.html www/dashboard.html www/admin.html www/css www/js www/assets android
           git diff --cached --quiet || git commit -m "chore: sync web app source to ${{ steps.source.outputs.latest_sha }} [skip ci]"
           git push
