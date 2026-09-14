@@ -51,13 +51,11 @@ function main() {
     console.log(`Synced ${item}`);
   }
 
-  // Your assets/icon.png etc. from the app shell take priority over the
-  // source repo's own assets/ for the app icon itself — restore ours after
-  // the copy so the native app icon stays the branded one we generated.
-  const shellIcon = path.join(__dirname, "..", "assets", "icon.png");
-  const shellSplash = path.join(__dirname, "..", "assets", "splash.png");
-  if (fs.existsSync(shellIcon)) fs.copyFileSync(shellIcon, path.join(WWW_DIR, "assets", "icon.png"));
-  if (fs.existsSync(shellSplash)) fs.copyFileSync(shellSplash, path.join(WWW_DIR, "assets", "splash.png"));
+  // Note: the shell's own splash/onboarding files live in www/shell/ and
+  // www/native/ — folders the source repo doesn't have and this script
+  // never touches — so nothing above can ever overwrite them. The native
+  // app icon itself is generated separately from the top-level assets/
+  // folder by `npx capacitor-assets generate`, independent of www/assets.
 
   fs.rmSync(tmp, { recursive: true, force: true });
 
