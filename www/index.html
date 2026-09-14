@@ -9,20 +9,20 @@
 <body>
 <div id="app">
 
-  <!-- 1. SPLASH SCREEN -->
+  <!-- SPLASH SCREEN -->
   <section id="splash" class="screen active">
     <div class="splash-logo-wrap">
       <div class="splash-ring"></div>
       <div class="splash-ring r2"></div>
       <div class="splash-ring r3"></div>
-      <img class="splash-logo" src="../assets/icon-foreground.png" alt="logo" />
+      <img class="splash-logo" src="assets/icon-foreground.png" alt="logo" />
     </div>
     <div class="splash-word">ELMUBARAK DIGITAL HUB</div>
     <div class="splash-sub">Airtime · Data · Bills · Rewards</div>
     <div class="splash-bar"><i></i></div>
   </section>
 
-  <!-- 2. ONBOARDING (3 slides) -->
+  <!-- ONBOARDING (3 slides) -->
   <section id="onboarding" class="screen">
     <div class="ob-track" id="obTrack">
       <div class="ob-slide">
@@ -33,12 +33,12 @@
       <div class="ob-slide">
         <div class="ob-art"><span>💳</span></div>
         <h2>Pay Every Bill in One Place</h2>
-        <p>Electricity, cable TV, education pins and more — manage all your bills from a single wallet.</p>
+        <p>Electricity, cable TV, exam pins and more — manage all your bills from a single wallet.</p>
       </div>
       <div class="ob-slide">
         <div class="ob-art"><span>🎁</span></div>
-        <h2>Earn as You Transact</h2>
-        <p>Get rewards and cashback on every transaction, and track it all from your dashboard.</p>
+        <h2>One Wallet, Every Service</h2>
+        <p>Fund once, spend anywhere in the app — airtime, data, bills, transfers and withdrawals.</p>
       </div>
     </div>
     <div class="ob-dots" id="obDots">
@@ -49,50 +49,6 @@
       <button class="btn-next" id="obNext">Next <span>→</span></button>
     </div>
   </section>
-
-  <!-- 3. AUTH (loads your live signin/signup page) -->
-  <section id="authHost" class="screen">
-    <div class="host-loading" id="authLoading"><div class="spinner"></div><span>Connecting…</span></div>
-    <iframe id="authFrame" class="host-frame"></iframe>
-  </section>
-
-  <!-- 4. DASHBOARD SHELL (native chrome + your live app in an iframe) -->
-  <section id="appHost" class="screen">
-    <div class="topbar">
-      <button class="icon-btn" id="btnMenu">☰</button>
-      <div class="topbar-title" id="topbarTitle">Home</div>
-      <button class="icon-btn" id="btnBell">🔔</button>
-    </div>
-
-    <div style="position:relative; flex:1;">
-      <div class="host-loading" id="appLoading"><div class="spinner"></div><span>Loading…</span></div>
-      <iframe id="appFrame" class="host-frame"></iframe>
-      <button class="fab" id="fabAdd">＋</button>
-    </div>
-
-    <nav class="bottom-nav">
-      <button class="nav-item active" data-route="home"><span class="ic">🏠</span>Home</button>
-      <button class="nav-item" data-route="pay"><span class="ic">💸</span>Pay</button>
-      <button class="nav-item" data-route="transactions"><span class="ic">🧾</span>Transaction</button>
-      <button class="nav-item" data-route="profile"><span class="ic">👤</span>Profile</button>
-    </nav>
-  </section>
-
-  <!-- DRAWER -->
-  <div class="drawer-scrim" id="drawerScrim"></div>
-  <aside class="drawer" id="drawer">
-    <div class="drawer-avatar">E</div>
-    <div class="drawer-name">Elmubarak Digital Hub</div>
-    <div class="drawer-sub">Manage your account</div>
-    <div class="drawer-menu">
-      <button class="drawer-link" data-route="profile"><span class="ic">👤</span>My Profile</button>
-      <button class="drawer-link" data-route="rewards"><span class="ic">🎁</span>Rewards</button>
-      <button class="drawer-link" data-route="support"><span class="ic">💬</span>Support</button>
-      <button class="drawer-link" data-route="settings"><span class="ic">⚙️</span>Settings</button>
-      <button class="drawer-link" id="drawerLogout"><span class="ic">🚪</span>Sign Out</button>
-    </div>
-    <div class="drawer-footer">Elmubarak Digital Hub · v1.0.0</div>
-  </aside>
 
 </div>
 <script src="js/app.js"></script>

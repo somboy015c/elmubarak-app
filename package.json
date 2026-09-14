@@ -5,6 +5,7 @@
   "description": "Mobile app shell for Elmubarak Digital Hub (VTU platform) built with Capacitor.",
   "scripts": {
     "assets": "capacitor-assets generate",
+    "sync-source": "node scripts/sync-source.js",
     "sync": "cap sync",
     "android": "cap open android",
     "ios": "cap open ios",

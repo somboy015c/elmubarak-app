@@ -1,0 +1,33 @@
+/* Injected on top of your existing css/style.css — never edited, only added to. */
+:root{ --eh-navy:#1B2A42; --eh-gold:#C9972F; --eh-bottomnav-h:66px; }
+
+html.eh-native-shell body{ padding-bottom: env(safe-area-inset-bottom); }
+
+/* keep content clear of the fixed bottom nav */
+html.eh-native-shell .view-body{ padding-bottom: calc(var(--eh-bottomnav-h) + 18px) !important; }
+
+/* smoother, native-style view transitions layered on top of your own show/hide logic */
+html.eh-native-shell .view{ transition: opacity 220ms cubic-bezier(.2,.8,.2,1), transform 220ms cubic-bezier(.2,.8,.2,1); }
+html.eh-native-shell .view.eh-entering{ opacity: 0; transform: translateY(10px); }
+html.eh-native-shell .view.active{ opacity: 1; transform: translateY(0); }
+
+/* your sidebar already behaves like a drawer on mobile — just round it off a bit */
+html.eh-native-shell .sidebar{ border-top-right-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 0 40px rgba(0,0,0,.25); }
+
+/* ---------- BOTTOM NAV (new) ---------- */
+.eh-bottom-nav{
+  position: fixed; left:0; right:0; bottom:0; z-index: 40;
+  display:flex; background:#fff; box-shadow:0 -2px 16px rgba(20,30,50,.12);
+  padding: 6px 4px calc(8px + env(safe-area-inset-bottom));
+}
+.eh-nav-item{
+  flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:8px 2px; border:none; background:none; color:#7A8494; font-size:11px; font-weight:600;
+  transition: color 160ms;
+}
+.eh-nav-item .eh-ic{ font-size:19px; transition: transform 220ms cubic-bezier(.2,.8,.2,1); }
+.eh-nav-item.eh-active{ color: var(--eh-navy); }
+.eh-nav-item.eh-active .eh-ic{ transform: translateY(-3px) scale(1.15); color: var(--eh-gold); }
+
+/* hide the desktop-oriented mobile-appbar brand row's extra padding so it sits under the status bar nicely */
+html.eh-native-shell .mobile-appbar{ padding-top: env(safe-area-inset-top); }

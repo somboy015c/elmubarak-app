@@ -4,11 +4,7 @@
   "webDir": "www",
   "backgroundColor": "#1B2A42",
   "server": {
-    "androidScheme": "https",
-    "allowNavigation": [
-      "*.elmubarak.example",
-      "REPLACE-WITH-YOUR-WEB-APP-DOMAIN"
-    ]
+    "androidScheme": "https"
   },
   "plugins": {
     "SplashScreen": {
