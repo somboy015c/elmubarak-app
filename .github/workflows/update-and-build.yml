@@ -76,6 +76,24 @@ jobs:
         if: steps.compare.outputs.changed == 'true'
         run: npm install
 
+      - name: Pull latest web app source into www/
+        if: steps.compare.outputs.changed == 'true'
+        run: node scripts/sync-source.js
+
+      - name: Add Android platform (first run only)
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          if [ ! -d android ]; then
+            echo "android/ not found in repo yet — bootstrapping it now."
+            npx cap add android
+          else
+            echo "android/ already exists — skipping."
+          fi
+
+      - name: Generate icon & splash images
+        if: steps.compare.outputs.changed == 'true'
+        run: npx capacitor-assets generate --android
+
       - name: Bump build number
         if: steps.compare.outputs.changed == 'true'
         run: node scripts/bump-version.js
@@ -107,6 +125,6 @@ jobs:
           echo "${{ steps.source.outputs.latest_sha }}" > .sync/last-source.sha
           git config user.name "elmubarak-bot"
           git config user.email "bot@elmubarak.local"
-          git add .sync/last-source.sha
-          git diff --cached --quiet || git commit -m "chore: sync build to source ${{ steps.source.outputs.latest_sha }} [skip ci]"
+          git add .sync/last-source.sha www/login.html www/register.html www/dashboard.html www/admin.html www/css www/js android
+          git diff --cached --quiet || git commit -m "chore: sync web app source to ${{ steps.source.outputs.latest_sha }} [skip ci]"
           git push
