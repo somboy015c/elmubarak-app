@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Elmubarak Digital Hub</string>
+    <string name="title_activity_main">Elmubarak Digital Hub</string>
+    <string name="package_name">com.elmubarak.digitalhub</string>
+    <string name="custom_url_scheme">com.elmubarak.digitalhub</string>
+</resources>

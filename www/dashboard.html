@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Dashboard — Elmubarak Digital Hub</title>
+<link rel="icon" type="image/png" href="assets/favicon.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="native/bridge.css" />
+</head>
+<body>
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+<div class="app-shell">
+
+  <aside class="sidebar" id="sidebar">
+    <a href="index.html" class="brand">
+      <img class="brand-mark" src="assets/icon.png" alt="Elmubarak Digital Hub logo" />
+      <span class="brand-text">Elmubarak</span>
+    </a>
+    <div class="sidebar-profile">
+      <div class="user-avatar-circle" id="sidebar-avatar">U</div>
+      <div class="sidebar-profile-text">
+        <div class="sidebar-profile-name" id="sidebar-username">Loading...</div>
+        <div class="sidebar-profile-balance" id="sidebar-balance">₦0.00</div>
+      </div>
+    </div>
+    <button class="nav-item active" data-view="home"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Dashboard</button>
+    <button class="nav-item" data-view="airtime"><svg class="icon" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg>Airtime</button>
+    <button class="nav-item" data-view="data"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12.5a11 11 0 0114 0"/><path d="M8.5 16a6 6 0 017 0"/><line x1="12" y1="19.5" x2="12" y2="19.51"/></svg>Data</button>
+    <button class="nav-item" data-view="electricity"><svg class="icon" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>Electricity</button>
+    <button class="nav-item" data-view="cable"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>Cable TV</button>
+    <button class="nav-item" data-view="exam"><svg class="icon" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg>Exam PINs</button>
+    <button class="nav-item" data-view="transactions"><svg class="icon" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/></svg>Transactions</button>
+    <button class="nav-item" data-view="fund"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h2"/></svg>Fund wallet</button>
+    <button class="nav-item" data-view="transfer"><svg class="icon" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="8 7 17 7 17 16"/></svg>Transfer</button>
+    <button class="nav-item" data-view="withdraw"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="10" y2="15"/></svg>Withdraw</button>
+    <button class="nav-item" data-view="airtime2cash"><svg class="icon" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M9 20h6"/><path d="M9 4h6"/><path d="M12 9v3l2 1"/></svg>Airtime to Cash</button>
+    <button class="nav-item" data-view="settings"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.5a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09A1.65 1.65 0 0015 4.6a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</button>
+    <div class="sidebar-footer">
+      <a class="nav-item" href="admin.html" id="admin-link" style="display:none;"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2 3 6v6c0 5 3.8 8.5 9 10 5.2-1.5 9-5 9-10V6l-9-4z"/></svg>Admin panel</a>
+      <button class="nav-item" id="logout-btn"><svg class="icon" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Log out</button>
+    </div>
+  </aside>
+
+  <div class="main-area">
+    <div class="mobile-appbar">
+      <a href="index.html" class="brand">
+        <img class="header-logo" src="assets/logo-wide.png" alt="Elmubarak Digital Hub logo" />
+      </a>
+      <button class="hamburger-btn" id="sidebar-toggle" aria-label="Open menu">
+        <svg class="icon" viewBox="0 0 24 24" style="width:22px;height:22px;"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="topbar">
+      <div>
+        <strong>Dashboard</strong>
+      </div>
+      <div class="topbar-profile">
+        <div class="topbar-profile-text">
+          <div class="topbar-profile-name" id="topbar-username">Loading...</div>
+          <div class="topbar-profile-balance" id="topbar-balance">₦0.00</div>
+        </div>
+        <div class="user-avatar-circle" id="topbar-avatar">U</div>
+      </div>
+    </div>
+
+    <div class="view-body">
+
+      <!-- HOME -->
+      <section class="view active" id="view-home">
+        <div class="mobile-profile-banner">
+          <div class="mobile-profile-top">
+            <div class="user-avatar-circle" id="mobile-profile-avatar">U</div>
+            <div>
+              <div class="mobile-profile-name" id="mobile-profile-name">Loading...</div>
+              <div class="mobile-profile-sub">Elmubarak Wallet</div>
+            </div>
+          </div>
+          <div class="mobile-profile-balance-label">Available balance</div>
+          <div class="mobile-profile-balance" id="mobile-profile-balance">₦0.00</div>
+          <button class="btn btn-accent btn-sm" id="mobile-fund-btn">
+            <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px;"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h2"/></svg>
+            Fund wallet
+          </button>
+        </div>
+        <h2>Quick actions</h2>
+        <div class="grid-tiles">
+          <button class="tile-btn" data-view="airtime"><div class="tile-icon icon-chip"><svg class="icon" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/></svg></div><div class="tile-title">Airtime</div><div class="tile-sub">All networks</div></button>
+          <button class="tile-btn" data-view="data"><div class="tile-icon icon-chip"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12.5a11 11 0 0114 0"/><path d="M8.5 16a6 6 0 017 0"/><line x1="12" y1="19.5" x2="12" y2="19.51"/></svg></div><div class="tile-title">Data</div><div class="tile-sub">Daily to monthly</div></button>
+          <button class="tile-btn" data-view="electricity"><div class="tile-icon icon-chip"><svg class="icon" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div><div class="tile-title">Electricity</div><div class="tile-sub">Prepaid & postpaid</div></button>
+          <button class="tile-btn" data-view="cable"><div class="tile-icon icon-chip"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="13" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div class="tile-title">Cable TV</div><div class="tile-sub">DStv, GOtv, Startimes</div></button>
+          <button class="tile-btn" data-view="exam"><div class="tile-icon icon-chip"><svg class="icon" viewBox="0 0 24 24"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c0 1.5 3 3 6 3s6-1.5 6-3v-5"/></svg></div><div class="tile-title">Exam PINs</div><div class="tile-sub">WAEC, NECO, JAMB</div></button>
+          <button class="tile-btn" data-view="fund"><div class="tile-icon icon-chip"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h2"/></svg></div><div class="tile-title">Fund wallet</div><div class="tile-sub">Card or transfer</div></button>
+          <button class="tile-btn" data-view="transfer"><div class="tile-icon icon-chip"><svg class="icon" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="8 7 17 7 17 16"/></svg></div><div class="tile-title">Transfer</div><div class="tile-sub">Send to another user</div></button>
+          <button class="tile-btn" data-view="withdraw"><div class="tile-icon icon-chip"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="10" y2="15"/></svg></div><div class="tile-title">Withdraw</div><div class="tile-sub">To your bank account</div></button>
+          <button class="tile-btn" data-view="airtime2cash"><div class="tile-icon icon-chip"><svg class="icon" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M9 20h6"/><path d="M9 4h6"/><path d="M12 9v3l2 1"/></svg></div><div class="tile-title">Airtime to Cash</div><div class="tile-sub">Convert airtime sent</div></button>
+        </div>
+        <h2>Recent transactions</h2>
+        <div class="card" style="padding:0; overflow:hidden;">
+          <table class="tx-table" id="home-tx-table">
+            <thead><tr><th>Description</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody id="home-tx-body"></tbody>
+          </table>
+          <div class="empty-state" id="home-tx-empty" style="display:none;">No transactions yet. Your purchases will show up here.</div>
+        </div>
+      </section>
+
+      <!-- AIRTIME -->
+      <section class="view" id="view-airtime">
+        <h2>Buy airtime</h2>
+        <form class="card form-card" id="airtime-form">
+          <div class="field">
+            <label for="airtime-network">Network</label>
+            <select id="airtime-network" required>
+              <option value="">Select network</option>
+              <option value="mtn">MTN</option>
+              <option value="airtel">Airtel</option>
+              <option value="glo">Glo</option>
+              <option value="9mobile">9mobile</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="airtime-phone">Phone number</label>
+            <input id="airtime-phone" type="tel" required placeholder="080..." />
+          </div>
+          <div class="field">
+            <label for="airtime-amount">Amount (₦)</label>
+            <input id="airtime-amount" type="number" min="50" required placeholder="e.g. 500" />
+          </div>
+          <button class="btn btn-accent btn-block" type="submit">Buy airtime</button>
+        </form>
+      </section>
+
+      <!-- DATA -->
+      <section class="view" id="view-data">
+        <h2>Buy data</h2>
+        <form class="card form-card" id="data-form">
+          <div class="field">
+            <label for="data-network">Network</label>
+            <select id="data-network" required>
+              <option value="">Select network</option>
+              <option value="mtn">MTN</option>
+              <option value="airtel">Airtel</option>
+              <option value="glo">Glo</option>
+              <option value="9mobile">9mobile</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="data-plan">Data plan</label>
+            <select id="data-plan" required disabled><option value="">Select a network first</option></select>
+          </div>
+          <div class="field">
+            <label for="data-phone">Phone number</label>
+            <input id="data-phone" type="tel" required placeholder="080..." />
+          </div>
+          <button class="btn btn-accent btn-block" type="submit">Buy data</button>
+        </form>
+      </section>
+
+      <!-- ELECTRICITY -->
+      <section class="view" id="view-electricity">
+        <h2>Pay electricity bill</h2>
+        <form class="card form-card" id="electricity-form">
+          <div class="field">
+            <label for="elec-disco">Distribution company</label>
+            <select id="elec-disco" required>
+              <option value="">Select disco</option>
+              <option value="ikeja-electric">Ikeja Electric</option>
+              <option value="eko-electric">Eko Electric</option>
+              <option value="abuja-electric">Abuja Electric</option>
+              <option value="kano-electric">Kano Electric</option>
+              <option value="portharcourt-electric">Port Harcourt Electric</option>
+            </select>
+          </div>
+          <div class="two-col">
+            <div class="field">
+              <label for="elec-meter-type">Meter type</label>
+              <select id="elec-meter-type" required>
+                <option value="prepaid">Prepaid</option>
+                <option value="postpaid">Postpaid</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="elec-meter">Meter number</label>
+              <input id="elec-meter" type="text" required placeholder="e.g. 04512345678" />
+            </div>
+          </div>
+          <div class="field">
+            <label for="elec-phone">Phone number</label>
+            <input id="elec-phone" type="tel" required placeholder="080..." />
+          </div>
+          <div class="field">
+            <label for="elec-amount">Amount (₦)</label>
+            <input id="elec-amount" type="number" min="500" required placeholder="e.g. 5000" />
+          </div>
+          <button class="btn btn-accent btn-block" type="submit">Pay bill</button>
+        </form>
+      </section>
+
+      <!-- CABLE -->
+      <section class="view" id="view-cable">
+        <h2>Cable TV subscription</h2>
+        <form class="card form-card" id="cable-form">
+          <div class="field">
+            <label for="cable-provider">Provider</label>
+            <select id="cable-provider" required>
+              <option value="">Select provider</option>
+              <option value="dstv">DStv</option>
+              <option value="gotv">GOtv</option>
+              <option value="startimes">Startimes</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="cable-plan">Bouquet</label>
+            <select id="cable-plan" required disabled><option value="">Select a provider first</option></select>
+          </div>
+          <div class="field">
+            <label for="cable-card">Smartcard / IUC number</label>
+            <input id="cable-card" type="text" required placeholder="e.g. 1234567890" />
+          </div>
+          <div class="field">
+            <label for="cable-phone">Phone number</label>
+            <input id="cable-phone" type="tel" required placeholder="080..." />
+          </div>
+          <button class="btn btn-accent btn-block" type="submit">Subscribe</button>
+        </form>
+      </section>
+
+      <!-- EXAM -->
+      <section class="view" id="view-exam">
+        <h2>Exam PINs</h2>
+        <form class="card form-card" id="exam-form">
+          <div class="field">
+            <label for="exam-plan">PIN type</label>
+            <select id="exam-plan" required><option value="">Loading...</option></select>
+          </div>
+          <div class="field">
+            <label for="exam-quantity">Quantity</label>
+            <input id="exam-quantity" type="number" min="1" value="1" required />
+          </div>
+          <div class="field">
+            <label for="exam-phone">Phone number</label>
+            <input id="exam-phone" type="tel" required placeholder="080..." />
+          </div>
+          <button class="btn btn-accent btn-block" type="submit">Buy PIN</button>
+        </form>
+      </section>
+
+      <!-- TRANSACTIONS -->
+      <section class="view" id="view-transactions">
+        <h2>All transactions</h2>
+        <div class="card" style="padding:0; overflow:hidden;">
+          <table class="tx-table" id="full-tx-table">
+            <thead><tr><th>Description</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+            <tbody id="full-tx-body"></tbody>
+          </table>
+          <div class="empty-state" id="full-tx-empty" style="display:none;">No transactions yet.</div>
+        </div>
+      </section>
+
+      <!-- FUND WALLET -->
+      <section class="view" id="view-fund">
+        <h2>Fund your wallet</h2>
+        <form class="card form-card" id="fund-form">
+          <div class="field">
+            <label for="fund-amount">Amount (₦)</label>
+            <input id="fund-amount" type="number" min="100" required placeholder="e.g. 5000" />
+          </div>
+          <p class="field-hint" id="fund-hint">Payments are processed securely via Paystack.</p>
+          <button class="btn btn-accent btn-block" type="submit">Fund wallet</button>
+        </form>
+      </section>
+
+      <!-- TRANSFER -->
+      <section class="view" id="view-transfer">
+        <h2>Transfer to another user</h2>
+        <form class="card form-card" id="transfer-form">
+          <div class="field">
+            <label for="transfer-recipient">Recipient's email or phone number</label>
+            <input id="transfer-recipient" type="text" required placeholder="e.g. amina@example.com" />
+          </div>
+          <div class="field">
+            <label for="transfer-amount">Amount (₦)</label>
+            <input id="transfer-amount" type="number" min="1" required placeholder="e.g. 2000" />
+          </div>
+          <div class="field">
+            <label for="transfer-pin">Transaction PIN</label>
+            <input id="transfer-pin" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" required placeholder="4-digit PIN" />
+            <p class="field-hint">No PIN yet? Set one in <a href="#" data-view="settings">Settings</a>.</p>
+          </div>
+          <button class="btn btn-accent btn-block" type="submit">Send</button>
+        </form>
+      </section>
+
+      <!-- WITHDRAW -->
+      <section class="view" id="view-withdraw">
+        <h2>Withdraw to bank account</h2>
+        <div class="card form-card" id="withdraw-no-bank" style="display:none; margin-bottom:16px;">
+          <p style="margin-bottom:12px;">You haven't added a withdrawal bank account yet.</p>
+          <button class="btn btn-primary btn-sm" data-view="settings">Add bank account</button>
+        </div>
+        <div class="card form-card" id="withdraw-bank-summary" style="display:none; margin-bottom:16px;">
+          <p class="field-hint" style="margin-bottom:6px;">Withdrawing to</p>
+          <strong id="withdraw-bank-details">—</strong>
+        </div>
+        <form class="card form-card" id="withdraw-form">
+          <div class="field">
+            <label for="withdraw-amount">Amount (₦)</label>
+            <input id="withdraw-amount" type="number" min="1" required placeholder="e.g. 5000" />
+            <p class="field-hint" id="withdraw-min-hint"></p>
+          </div>
+          <div class="field">
+            <label for="withdraw-pin">Transaction PIN</label>
+            <input id="withdraw-pin" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" required placeholder="4-digit PIN" />
+          </div>
+          <button class="btn btn-accent btn-block" type="submit">Request withdrawal</button>
+        </form>
+      </section>
+
+      <!-- AIRTIME TO CASH -->
+      <section class="view" id="view-airtime2cash">
+        <h2>Airtime to Cash</h2>
+        <p style="margin-bottom:16px;">Send airtime to our recharge number, then submit the details below. Your wallet is credited once verified.</p>
+        <form class="card form-card" id="airtime2cash-form">
+          <div class="field">
+            <label for="a2c-method">Verification method</label>
+            <select id="a2c-method">
+              <option value="manual">Manual review (admin checks and credits you)</option>
+              <option value="automatic">Automatic (instant, where available)</option>
+            </select>
+            <p class="field-hint" id="a2c-method-hint"></p>
+          </div>
+          <div class="field">
+            <label for="a2c-network">Network</label>
+            <select id="a2c-network" required>
+              <option value="">Select network</option>
+              <option value="mtn">MTN</option>
+              <option value="airtel">Airtel</option>
+              <option value="glo">Glo</option>
+              <option value="9mobile">9mobile</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="a2c-amount">Amount sent (₦)</label>
+            <input id="a2c-amount" type="number" min="100" required placeholder="e.g. 1000" />
+            <p class="field-hint" id="a2c-rate-hint">You'll receive a percentage of face value, subject to verification.</p>
+          </div>
+          <div class="field">
+            <label for="a2c-phone">Phone number airtime was sent from</label>
+            <input id="a2c-phone" type="tel" required placeholder="080..." />
+          </div>
+          <div class="field">
+            <label for="a2c-pin">Transaction PIN</label>
+            <input id="a2c-pin" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" required placeholder="4-digit PIN" />
+          </div>
+          <button class="btn btn-accent btn-block" type="submit">Submit request</button>
+        </form>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="view" id="view-settings">
+        <h2>Settings</h2>
+
+        <h3 style="margin-top:0;">Transaction PIN</h3>
+        <form class="card form-card" id="pin-form" style="margin-bottom:28px;">
+          <div class="field" id="pin-current-field" style="display:none;">
+            <label for="pin-current">Current PIN</label>
+            <input id="pin-current" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="Current 4-digit PIN" />
+          </div>
+          <div class="field">
+            <label for="pin-new">New PIN</label>
+            <input id="pin-new" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" required placeholder="4-digit PIN" />
+          </div>
+          <div class="field">
+            <label for="pin-password">Account password</label>
+            <input id="pin-password" type="password" required placeholder="Confirm your password" />
+            <p class="field-hint">Required to confirm it's really you.</p>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit" id="pin-submit-btn">Set PIN</button>
+        </form>
+
+        <h3>Withdrawal Bank Account</h3>
+        <form class="card form-card" id="bank-form">
+          <div class="field">
+            <label for="bank-select">Bank</label>
+            <select id="bank-select" required><option value="">Loading banks...</option></select>
+          </div>
+          <div class="field">
+            <label for="bank-account-number">Account number</label>
+            <input id="bank-account-number" type="text" required placeholder="10-digit account number" maxlength="10" />
+            <p class="field-hint">
+              <a href="#" id="resolve-account-btn">Verify account name</a>
+            </p>
+          </div>
+          <div class="field">
+            <label for="bank-account-name">Account name</label>
+            <input id="bank-account-name" type="text" required placeholder="Name on the account" />
+          </div>
+          <div class="field">
+            <label for="bank-pin">Transaction PIN</label>
+            <input id="bank-pin" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" required placeholder="4-digit PIN" />
+            <p class="field-hint">Required so only you can change your payout account.</p>
+          </div>
+          <button class="btn btn-primary btn-block" type="submit">Save bank account</button>
+        </form>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/dashboard.js"></script>
+<a href="https://wa.me/2349045852890?text=Hi%2C%20I%20need%20help%20with%20my%20Elmubarak%20Digital%20Hub%20account" target="_blank" rel="noopener" class="whatsapp-float-btn" aria-label="Chat with us on WhatsApp">
+  <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.39 1.26 4.81L2 22l5.42-1.35a9.87 9.87 0 004.62 1.15h.01c5.46 0 9.9-4.45 9.9-9.91C21.95 6.45 17.5 2 12.04 2zm5.8 14.11c-.24.68-1.4 1.3-1.93 1.37-.5.07-1.12.1-1.8-.11-.42-.13-.95-.3-1.64-.6-2.88-1.24-4.76-4.15-4.9-4.34-.15-.19-1.17-1.56-1.17-2.98 0-1.42.74-2.11 1-2.4.26-.29.57-.36.76-.36.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.15.07.15.11.32.02.51-.09.19-.14.31-.27.48-.14.17-.29.38-.41.51-.14.14-.28.29-.12.57.16.28.72 1.19 1.55 1.93 1.06.95 1.96 1.24 2.24 1.38.28.14.44.12.6-.07.16-.19.7-.82.89-1.1.19-.28.37-.23.63-.14.26.09 1.66.79 1.94.93.28.14.47.21.53.33.07.12.07.68-.17 1.36z"/></svg>
+</a>
+<script src="native/bridge.js"></script>
+</body>
+</html>
