@@ -1,1 +1,153 @@
+name: Update from Web App & Build
 
+# This is the "action button": go to the Actions tab on GitHub → this workflow →
+# "Run workflow" to manually pull the latest state of the source web app and
+# cut a fresh Android build. It also runs automatically once a day, and can be
+# wired to a repository_dispatch call from the source repo for instant syncs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: "Rebuild even if the source repo has no new commits"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 3 * * *"   # daily at 03:00 UTC — adjust as needed
+  repository_dispatch:
+    types: [source-updated]
+
+permissions:
+  contents: write   # needed so the workflow can commit the synced files + APK version bump back to this repo
+
+env:
+  SOURCE_REPO: "somboy015c/almubarak"
+  SOURCE_BRANCH: "main"
+
+jobs:
+  check-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest commit SHA of source web app
+        id: source
+        run: |
+          SHA=$(git ls-remote https://github.com/${SOURCE_REPO}.git refs/heads/${SOURCE_BRANCH} | cut -f1)
+          echo "latest_sha=$SHA" >> "$GITHUB_OUTPUT"
+          echo "Latest source commit: $SHA"
+
+      - name: Compare against last synced commit
+        id: compare
+        run: |
+          mkdir -p .sync
+          if [ -f .sync/last-source.sha ]; then
+            LAST=$(cat .sync/last-source.sha)
+          else
+            LAST="none"
+          fi
+          echo "last_sha=$LAST" >> "$GITHUB_OUTPUT"
+          if [ "$LAST" = "${{ steps.source.outputs.latest_sha }}" ] && [ "${{ inputs.force_rebuild }}" != "true" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stop here if nothing changed
+        if: steps.compare.outputs.changed == 'false'
+        run: echo "No new commits on ${{ env.SOURCE_REPO }} since last build — skipping rebuild."
+
+      # ---- Everything below only runs if the source changed (or force_rebuild) ----
+
+      - name: Set up Node
+        if: steps.compare.outputs.changed == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up JDK
+        if: steps.compare.outputs.changed == 'true'
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        if: steps.compare.outputs.changed == 'true'
+        run: npm install
+
+      - name: Pull latest web app source into www/
+        if: steps.compare.outputs.changed == 'true'
+        run: node scripts/sync-source.js
+
+      - name: Add Android platform (first run only)
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          if [ ! -d android ]; then
+            echo "android/ not found in repo yet — bootstrapping it now."
+            npx cap add android
+          else
+            echo "android/ already exists — skipping."
+          fi
+
+      - name: Generate icon & splash images
+        if: steps.compare.outputs.changed == 'true'
+        run: npx capacitor-assets generate --android
+
+      - name: Bump build number
+        if: steps.compare.outputs.changed == 'true'
+        run: node scripts/bump-version.js
+
+      - name: Capacitor sync
+        if: steps.compare.outputs.changed == 'true'
+        run: npx cap sync android
+
+      - name: Build Android APK (debug, unsigned)
+        if: steps.compare.outputs.changed == 'true'
+        working-directory: android
+        run: ./gradlew assembleDebug
+
+        # To ship a signed release build instead, add these repo secrets:
+        #   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
+        #   ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+        # decode the keystore in a prior step and run `./gradlew assembleRelease`.
+
+      - name: Rename APK
+        if: steps.compare.outputs.changed == 'true'
+        run: cp android/app/build/outputs/apk/debug/app-debug.apk Elmubarak-DH.apk
+
+      - name: Upload APK artifact
+        if: steps.compare.outputs.changed == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: elmubarak-digital-hub-debug
+          path: Elmubarak-DH.apk
+
+      - name: Publish to Releases
+        if: steps.compare.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="latest-build"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" Elmubarak-DH.apk --clobber
+            gh release edit "$TAG" --title "Elmubarak Digital Hub — build ${{ github.run_number }}" \
+              --notes "Auto-built from ${{ env.SOURCE_REPO }}@${{ steps.source.outputs.latest_sha }} on $(date -u +'%Y-%m-%d %H:%M UTC')."
+          else
+            gh release create "$TAG" Elmubarak-DH.apk \
+              --title "Elmubarak Digital Hub — build ${{ github.run_number }}" \
+              --notes "Auto-built from ${{ env.SOURCE_REPO }}@${{ steps.source.outputs.latest_sha }} on $(date -u +'%Y-%m-%d %H:%M UTC')."
+          fi
+
+      - name: Record synced commit
+        if: steps.compare.outputs.changed == 'true'
+        run: |
+          echo "${{ steps.source.outputs.latest_sha }}" > .sync/last-source.sha
+          git config user.name "elmubarak-bot"
+          git config user.email "bot@elmubarak.local"
+          git add .sync/last-source.sha www/login.html www/register.html www/dashboard.html www/admin.html www/css www/js www/assets android
+          git diff --cached --quiet || git commit -m "chore: sync web app source to ${{ steps.source.outputs.latest_sha }} [skip ci]"
+          git push
