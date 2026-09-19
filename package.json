@@ -1,0 +1,28 @@
+{
+  "name": "elmubarak-digital-hub",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mobile app shell for Elmubarak Digital Hub (VTU platform) built with Capacitor.",
+  "scripts": {
+    "assets": "capacitor-assets generate",
+    "sync-source": "node scripts/sync-source.js",
+    "sync": "cap sync",
+    "android": "cap open android",
+    "ios": "cap open ios",
+    "build:android": "cd android && ./gradlew assembleRelease",
+    "bump-and-sync": "node scripts/bump-version.js && cap sync"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/ios": "^6.1.0",
+    "@capacitor/splash-screen": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.4",
+    "@capacitor/cli": "^6.1.0"
+  }
+}

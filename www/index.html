@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<title>Elmubarak Digital Hub</title>
+<link rel="stylesheet" href="shell/app.css" />
+</head>
+<body>
+<div id="app">
+
+  <!-- SPLASH SCREEN (white bg, logo only) -->
+  <section id="splash" class="screen active">
+    <div class="splash-logo-wrap">
+      <div class="splash-ring"></div>
+      <div class="splash-ring r2"></div>
+      <div class="splash-ring r3"></div>
+      <img class="splash-logo" src="shell/icon-foreground.png" alt="logo" />
+    </div>
+    <div class="splash-bar"><i></i></div>
+  </section>
+
+  <!-- ONBOARDING (3 full-bleed photo slides) -->
+  <section id="onboarding" class="screen">
+    <div class="ob-track" id="obTrack">
+      <div class="ob-slide" style="background-image:url('shell/onboarding/slide-1.jpg')">
+        <div class="ob-text">
+          <h2>Instant Airtime &amp; Data</h2>
+          <p>Top up any network in seconds, at rates built for everyday use — no delays, no stress.</p>
+        </div>
+      </div>
+      <div class="ob-slide" style="background-image:url('shell/onboarding/slide-2.jpg')">
+        <div class="ob-text">
+          <h2>One Wallet, Every Service</h2>
+          <p>Pay bills, buy airtime, transfer, and more — all from a single wallet.</p>
+        </div>
+      </div>
+      <div class="ob-slide" style="background-image:url('shell/onboarding/slide-3.jpg')">
+        <div class="ob-text">
+          <h2>Pay Every Bill in One Place</h2>
+          <p>Electricity, DSTV, water, airtime — manage it all instantly, wherever you are.</p>
+        </div>
+      </div>
+    </div>
+    <div class="ob-dots" id="obDots">
+      <div class="ob-dot active"></div><div class="ob-dot"></div><div class="ob-dot"></div>
+    </div>
+    <div class="ob-footer">
+      <button class="btn-skip" id="obSkip">Skip</button>
+      <button class="btn-next" id="obNext">Next <span>→</span></button>
+    </div>
+  </section>
+
+</div>
+<script src="shell/app.js"></script>
+</body>
+</html>
