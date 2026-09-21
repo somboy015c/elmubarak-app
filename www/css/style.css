@@ -260,6 +260,24 @@ img, svg { display: block; max-width: 100%; }
 .mobile-menu-panel .mobile-menu-ctas { display: flex; gap: 10px; padding-top: 14px; }
 .mobile-menu-panel .mobile-menu-ctas .btn { flex: 1; }
 
+/* Download App link (sidebar + mobile menu): matches .nav-item, no background */
+.mobile-download-app {
+  background: none !important;
+  border: none !important;
+  border-radius: var(--radius-sm);
+  margin-bottom: 0;
+  padding: 11px 12px !important;
+  gap: 10px !important;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.mobile-download-app:hover { background: var(--brand-tint) !important; }
+.mobile-download-app-icon { width: 20px; height: 20px; flex-shrink: 0; color: #3DDC84; }
+.mobile-download-app span { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.mobile-download-app strong { font-size: 0.92rem; font-weight: 500; color: var(--text-muted); line-height: 1.25; }
+.mobile-download-app small { font-size: 0.72rem; color: var(--text-muted); opacity: 0.8; line-height: 1.25; }
+.mobile-download-app:hover strong { color: var(--ink); }
+
 @media (max-width: 860px) {
   .nav-desktop { display: none; }
   .hamburger-btn { display: flex; }
