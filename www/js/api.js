@@ -65,7 +65,11 @@ const Api = (() => {
             location.href = 'login.html';
           }
         }
-        throw new Error(data.error || 'Something went wrong. Please try again.');
+        const apiErr = new Error(data.error || 'Something went wrong. Please try again.');
+        apiErr.code = data.code;
+        apiErr.status = res.status;
+        apiErr.data = data;
+        throw apiErr;
       }
 
       return data;

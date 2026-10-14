@@ -28,42 +28,97 @@
   </div>
   <div class="auth-form-side">
     <div class="auth-box">
-      <h2>Log in</h2>
-      <p>Access your wallet and keep topping up.</p>
-      <form id="login-form">
-        <div class="field">
-          <label for="email">Email address</label>
-          <input id="email" name="email" type="email" required placeholder="you@example.com" />
+      <div id="login-view">
+        <h2>Log in</h2>
+        <p>Access your wallet and keep topping up.</p>
+        <div id="unverified-box" class="notice-box hidden">
+          Your email isn't verified yet. We sent a link to <strong id="unverified-email"></strong>.
+          Didn't get it? <button type="button" id="resend-btn" data-label="Resend link">Resend link</button>
         </div>
-        <div class="field">
-          <label for="password">Password</label>
-          <input id="password" name="password" type="password" required placeholder="Your password" />
-        </div>
-        <button type="submit" class="btn btn-primary btn-block" id="submit-btn">Log in</button>
-      </form>
-      <div class="switch-link">New here? <a href="register.html"><strong>Create an account</strong></a></div>
+        <form id="login-form">
+          <div class="field">
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="email" required autocomplete="email" placeholder="you@example.com" />
+          </div>
+          <div class="field">
+            <div class="field-row">
+              <label for="password">Password</label>
+              <a href="forgot-password.html" class="forgot-link" id="forgot-link">Forgot password?</a>
+            </div>
+            <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Your password" />
+          </div>
+          <button type="submit" class="btn btn-primary btn-block" id="submit-btn">Log in</button>
+        </form>
+        <div class="switch-link">New here? <a href="register.html"><strong>Create an account</strong></a></div>
+      </div>
     </div>
   </div>
 </div>
-
+<script src="js/password-toggle.js"></script>
 <script>
+
+  function startCooldown(btn, label, seconds) {
+    let left = seconds;
+    btn.disabled = true;
+    btn.textContent = label + ' (' + left + 's)';
+    const t = setInterval(() => {
+      left--;
+      if (left <= 0) { clearInterval(t); btn.disabled = false; btn.textContent = label; }
+      else btn.textContent = label + ' (' + left + 's)';
+    }, 1000);
+  }
+  async function resendVerification(email, btn) {
+    try {
+      await Api.post('/auth/resend-verification', { email });
+      toast('A new verification link has been sent. Check your inbox (and spam).');
+      startCooldown(btn, btn.dataset.label, 60);
+    } catch (err) {
+      toast(err.message, 'error');
+    }
+  }
+
+  const params = new URLSearchParams(location.search);
+  const emailInput = document.getElementById('email');
+  const resendBtn = document.getElementById('resend-btn');
+  let pendingEmail = '';
+
+  if (params.get('verified') === '1') toast('Email verified! You can now log in.');
+  if (params.get('reset') === '1') toast('Password updated. Log in with your new password.');
+  if (params.get('email')) emailInput.value = params.get('email');
+
+  // Carry the typed email to the forgot-password page so they don't retype it
+  document.getElementById('forgot-link').addEventListener('click', (e) => {
+    const v = emailInput.value.trim();
+    if (v) { e.preventDefault(); location.href = 'forgot-password.html?email=' + encodeURIComponent(v); }
+  });
+
+  resendBtn.addEventListener('click', () => resendVerification(pendingEmail || emailInput.value.trim(), resendBtn));
+
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
     btn.textContent = 'Logging in...';
+    document.getElementById('unverified-box').classList.add('hidden');
     try {
-      const email = document.getElementById('email').value.trim();
+      const email = emailInput.value.trim();
       const password = document.getElementById('password').value;
       const data = await Api.post('/auth/login', { email, password });
       Api.setSession(data.token, data.user);
       location.href = 'dashboard.html';
     } catch (err) {
-      toast(err.message, 'error');
+      if (err.code === 'EMAIL_NOT_VERIFIED') {
+        pendingEmail = (err.data && err.data.email) || emailInput.value.trim();
+        document.getElementById('unverified-email').textContent = pendingEmail;
+        document.getElementById('unverified-box').classList.remove('hidden');
+      } else {
+        toast(err.message, 'error');
+      }
       btn.disabled = false;
       btn.textContent = 'Log in';
     }
   });
+
 </script>
 <a href="https://wa.me/2349045852890?text=Hi%2C%20I%20need%20help%20with%20my%20Elmubarak%20Digital%20Hub%20account" target="_blank" rel="noopener" class="whatsapp-float-btn" aria-label="Chat with us on WhatsApp">
   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.39 1.26 4.81L2 22l5.42-1.35a9.87 9.87 0 004.62 1.15h.01c5.46 0 9.9-4.45 9.9-9.91C21.95 6.45 17.5 2 12.04 2zm5.8 14.11c-.24.68-1.4 1.3-1.93 1.37-.5.07-1.12.1-1.8-.11-.42-.13-.95-.3-1.64-.6-2.88-1.24-4.76-4.15-4.9-4.34-.15-.19-1.17-1.56-1.17-2.98 0-1.42.74-2.11 1-2.4.26-.29.57-.36.76-.36.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.15.07.15.11.32.02.51-.09.19-.14.31-.27.48-.14.17-.29.38-.41.51-.14.14-.28.29-.12.57.16.28.72 1.19 1.55 1.93 1.06.95 1.96 1.24 2.24 1.38.28.14.44.12.6-.07.16-.19.7-.82.89-1.1.19-.28.37-.23.63-.14.26.09 1.66.79 1.94.93.28.14.47.21.53.33.07.12.07.68-.17 1.36z"/></svg>

@@ -82,6 +82,27 @@
     }
   }
 
+  async function loadProviderBalance() {
+    const card = document.getElementById('provider-card');
+    const status = document.getElementById('vtpass-status');
+    status.textContent = 'Checking...';
+    try {
+      const r = await Api.get('/admin/provider-balance');
+      document.getElementById('vtpass-balance').textContent = formatNaira(r.balance);
+      document.getElementById('vtpass-open').href = r.dashboardUrl;
+      document.getElementById('vtpass-mode').textContent = r.mock ? 'mock data' : r.dashboardUrl.includes('sandbox') ? 'sandbox' : 'live';
+      card.classList.toggle('low', !!r.low);
+      status.textContent = (r.low
+        ? `Low balance (below ${formatNaira(r.threshold)}). Top up on VTpass or customer orders will start failing. `
+        : 'Funds available for customer orders. ') + `Updated ${new Date(r.checkedAt).toLocaleTimeString('en-NG')}.`;
+    } catch (err) {
+      document.getElementById('vtpass-balance').textContent = '—';
+      status.textContent = err.message;
+    }
+  }
+  document.getElementById('vtpass-refresh').addEventListener('click', loadProviderBalance);
+  setInterval(() => { if (!document.hidden) loadProviderBalance(); }, 120000);
+
   async function loadUsers() {
     try {
       const { users } = await Api.get('/admin/users');
@@ -285,6 +306,7 @@
   renderUser();
   refreshUser();
   loadOverview();
+  loadProviderBalance();
   loadUsers();
   loadTransactions();
   loadPricing();

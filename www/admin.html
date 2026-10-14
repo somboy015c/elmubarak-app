@@ -61,6 +61,17 @@
 
       <section class="view active" id="view-overview">
         <h2>Overview</h2>
+        <div class="card provider-card" id="provider-card">
+          <div>
+            <div class="stat-label">VTpass wallet balance <span id="vtpass-mode" class="badge badge-neutral" style="margin-left:6px;"></span></div>
+            <div class="stat-value" id="vtpass-balance">—</div>
+            <div class="field-hint" id="vtpass-status">Checking...</div>
+          </div>
+          <div class="provider-actions">
+            <button type="button" class="btn btn-primary btn-sm" id="vtpass-refresh">Refresh</button>
+            <a class="btn btn-accent btn-sm" id="vtpass-open" href="https://vtpass.com/" target="_blank" rel="noopener">Open VTpass dashboard</a>
+          </div>
+        </div>
         <div class="stat-grid">
           <div class="card stat-card"><div class="stat-label">Total users</div><div class="stat-value" id="stat-users">—</div></div>
           <div class="card stat-card"><div class="stat-label">Total transactions</div><div class="stat-value" id="stat-tx">—</div></div>
@@ -153,5 +164,6 @@
 <a href="https://wa.me/2349045852890?text=Hi%2C%20I%20need%20help%20with%20my%20Elmubarak%20Digital%20Hub%20account" target="_blank" rel="noopener" class="whatsapp-float-btn" aria-label="Chat with us on WhatsApp">
   <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.39 1.26 4.81L2 22l5.42-1.35a9.87 9.87 0 004.62 1.15h.01c5.46 0 9.9-4.45 9.9-9.91C21.95 6.45 17.5 2 12.04 2zm5.8 14.11c-.24.68-1.4 1.3-1.93 1.37-.5.07-1.12.1-1.8-.11-.42-.13-.95-.3-1.64-.6-2.88-1.24-4.76-4.15-4.9-4.34-.15-.19-1.17-1.56-1.17-2.98 0-1.42.74-2.11 1-2.4.26-.29.57-.36.76-.36.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.15.07.15.11.32.02.51-.09.19-.14.31-.27.48-.14.17-.29.38-.41.51-.14.14-.28.29-.12.57.16.28.72 1.19 1.55 1.93 1.06.95 1.96 1.24 2.24 1.38.28.14.44.12.6-.07.16-.19.7-.82.89-1.1.19-.28.37-.23.63-.14.26.09 1.66.79 1.94.93.28.14.47.21.53.33.07.12.07.68-.17 1.36z"/></svg>
 </a>
+<script src="js/password-toggle.js"></script>
 </body>
 </html>
