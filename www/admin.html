@@ -63,15 +63,17 @@
         <h2>Overview</h2>
         <div class="card provider-card" id="provider-card">
           <div>
-            <div class="stat-label">VTpass wallet balance <span id="vtpass-mode" class="badge badge-neutral" style="margin-left:6px;"></span></div>
+            <div class="stat-label">Provider wallet balance <span id="vtpass-mode" class="badge badge-neutral" style="margin-left:6px;"></span></div>
             <div class="stat-value" id="vtpass-balance">—</div>
             <div class="field-hint" id="vtpass-status">Checking...</div>
           </div>
           <div class="provider-actions">
             <button type="button" class="btn btn-primary btn-sm" id="vtpass-refresh">Refresh</button>
-            <a class="btn btn-accent btn-sm" id="vtpass-open" href="https://vtpass.com/" target="_blank" rel="noopener">Open VTpass dashboard</a>
+            <button type="button" class="btn btn-sm" id="provider-check-btn" style="background:#EDF3F0;">Provider check</button>
+            <a class="btn btn-accent btn-sm" id="vtpass-open" href="https://www.arrifqubundle.com/" target="_blank" rel="noopener">Open provider dashboard</a>
           </div>
         </div>
+        <pre class="card" id="provider-check-out" style="display:none; white-space:pre-wrap; word-break:break-word; font-size:0.75rem; max-height:360px; overflow:auto; margin-bottom:24px;"></pre>
         <div class="stat-grid">
           <div class="card stat-card"><div class="stat-label">Total users</div><div class="stat-value" id="stat-users">—</div></div>
           <div class="card stat-card"><div class="stat-label">Total transactions</div><div class="stat-value" id="stat-tx">—</div></div>
@@ -94,7 +96,7 @@
         <h2>All transactions</h2>
         <div class="card" style="padding:0; overflow:hidden;">
           <table class="tx-table" id="admin-tx-table">
-            <thead><tr><th>Description</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+            <thead><tr><th>Description</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th><th></th></tr></thead>
             <tbody id="admin-tx-body"></tbody>
           </table>
         </div>

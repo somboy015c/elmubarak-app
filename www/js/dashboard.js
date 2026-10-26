@@ -122,8 +122,8 @@
       const r = await Api.get('/admin/provider-balance');
       $('provider-strip-balance').textContent = formatNaira(r.balance);
       $('provider-strip-note').textContent = r.low
-        ? `Low balance. Top up VTpass or customers' orders will fail.`
-        : r.mock ? 'Test mode (mock data)' : 'Live from VTpass';
+        ? `Low balance. Top up your provider wallet or customers' orders will fail.`
+        : r.mock ? 'Test mode (mock data)' : 'Live from provider';
       strip.classList.toggle('low', !!r.low);
     } catch (err) {
       $('provider-strip-balance').textContent = '—';
@@ -555,6 +555,10 @@
         ? plans.map((p) => `<option value="${esc(p.variation_code)}" data-price="${p.price}" data-body="${esc(p.serviceID || '')}" data-name="${esc(p.name)}" data-profile="${p.needsProfile ? '1' : ''}">${esc(p.name)} — ${formatNaira(p.price)}</option>`).join('')
         : '<option value="">No PINs available right now</option>';
       toggleExamProfile();
+      if (!plans.length) {
+        const sub = $('exam-tile-sub');
+        if (sub) sub.textContent = 'Coming soon';
+      }
     } catch (err) {
       toast(err.message, 'error');
     }

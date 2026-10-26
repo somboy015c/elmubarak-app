@@ -93,7 +93,7 @@
       document.getElementById('vtpass-mode').textContent = r.mock ? 'mock data' : r.dashboardUrl.includes('sandbox') ? 'sandbox' : 'live';
       card.classList.toggle('low', !!r.low);
       status.textContent = (r.low
-        ? `Low balance (below ${formatNaira(r.threshold)}). Top up on VTpass or customer orders will start failing. `
+        ? `Low balance (below ${formatNaira(r.threshold)}). Top up your provider wallet or customer orders will start failing. `
         : 'Funds available for customer orders. ') + `Updated ${new Date(r.checkedAt).toLocaleTimeString('en-NG')}.`;
     } catch (err) {
       document.getElementById('vtpass-balance').textContent = '—';
@@ -101,6 +101,16 @@
     }
   }
   document.getElementById('vtpass-refresh').addEventListener('click', loadProviderBalance);
+  document.getElementById('provider-check-btn').addEventListener('click', async () => {
+    const out = document.getElementById('provider-check-out');
+    out.style.display = 'block';
+    out.textContent = 'Checking provider...';
+    try {
+      out.textContent = JSON.stringify(await Api.get('/admin/provider-check'), null, 2);
+    } catch (err) {
+      out.textContent = err.message;
+    }
+  });
   setInterval(() => { if (!document.hidden) loadProviderBalance(); }, 120000);
 
   async function loadUsers() {
@@ -154,9 +164,27 @@
             <td>${formatNaira(t.amount)}</td>
             <td><span class="badge ${badgeClass}">${t.status}</span></td>
             <td>${new Date(t.createdAt).toLocaleString('en-NG')}</td>
+            <td>${t.status === 'pending' && ['airtime', 'data', 'electricity', 'cable', 'exam'].includes(t.type)
+              ? `<button class="btn btn-primary btn-sm tx-resolve" data-id="${t.id}" data-action="success">Mark paid</button> <button class="btn btn-danger btn-sm tx-resolve" data-id="${t.id}" data-action="refund">Refund</button>`
+              : ''}</td>
           </tr>`;
         })
         .join('');
+
+      document.querySelectorAll('.tx-resolve').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const refund = btn.dataset.action === 'refund';
+          if (!confirm(refund ? 'Refund the customer and mark this order failed?' : 'Mark this order as successfully delivered?')) return;
+          try {
+            const r = await Api.post(`/admin/transactions/${btn.dataset.id}/resolve`, { action: btn.dataset.action });
+            toast(r.message);
+            loadTransactions();
+            loadOverview();
+          } catch (err) {
+            toast(err.message, 'error');
+          }
+        });
+      });
     } catch (err) {
       toast(err.message, 'error');
     }
