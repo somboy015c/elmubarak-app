@@ -1,6 +1,6 @@
 (function () {
   if (!Api.isLoggedIn()) {
-    location.href = 'login.html';
+    location.replace('login.html');
     return;
   }
 
@@ -13,6 +13,11 @@
 
   // ---- View switching ----
   function showView(name) {
+    const gate = document.querySelector(`.nav-item[data-view="${name}"][data-service]`);
+    if (gate && gate.dataset.off === '1') {
+      toast('That service is currently unavailable.', 'error');
+      return;
+    }
     document.querySelectorAll('.view').forEach((v) => v.classList.remove('active'));
     $(`view-${name}`)?.classList.add('active');
     document.querySelectorAll('.nav-item[data-view]').forEach((btn) => {
@@ -48,11 +53,7 @@
   sidebarToggle?.addEventListener('click', openSidebar);
   sidebarBackdrop.addEventListener('click', closeSidebar);
 
-  $('logout-btn').addEventListener('click', () => {
-    showLoader();
-    Api.clearSession();
-    location.href = 'login.html';
-  });
+  $('logout-btn').addEventListener('click', () => Api.logout());
 
   // ---- Header / wallet (with hide-balance toggle, like banking apps) ----
   const EYE_ON = '<svg class="icon" viewBox="0 0 24 24" style="width:18px;height:18px;"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>';
@@ -113,7 +114,7 @@
     renderUser();
   }
 
-  // ---- Admin-only: VTpass wallet balance strip on home ----
+  // ---- Admin-only: provider wallet balance strip on home ----
   async function loadProviderStrip() {
     if (!user.isAdmin) return;
     const strip = $('provider-strip');
@@ -196,41 +197,112 @@
     });
   }
 
-  // Review -> confirm -> process -> receipt. Used by every purchase.
+  // ---- What the admin has switched on/off ----
+  let siteStatus = null;
+
+  function applyStatus(st) {
+    siteStatus = st;
+    const banner = $('maintenance-banner');
+    banner.style.display = st.maintenance ? 'block' : 'none';
+    banner.textContent = st.maintenance ? st.maintenanceMessage : '';
+    const notice = $('site-notice');
+    notice.style.display = st.notice ? 'block' : 'none';
+    notice.textContent = st.notice || '';
+
+    document.querySelectorAll('[data-service]').forEach((el) => {
+      const on = st.services[el.dataset.service] !== false;
+      el.dataset.off = on ? '0' : '1';
+      el.style.display = on ? '' : 'none'; // switched off = removed from the page
+    });
+    document.querySelectorAll('#airtime-network option, #data-network option').forEach((o) => {
+      if (o.value && st.networks[o.value] === false) { o.hidden = true; o.disabled = true; }
+      else if (o.value) { o.hidden = false; o.disabled = false; }
+    });
+    document.querySelectorAll('#cable-provider option').forEach((o) => {
+      if (o.value && st.cables[o.value] === false) { o.hidden = true; o.disabled = true; }
+      else if (o.value) { o.hidden = false; o.disabled = false; }
+    });
+
+    // If the page they are on was just switched off, send them home.
+    const active = document.querySelector('.view.active');
+    const navBtn = active && document.querySelector(`.nav-item[data-view="${active.id.replace('view-', '')}"][data-service]`);
+    if (navBtn && navBtn.dataset.off === '1') showView('home');
+  }
+
+  async function loadStatus() {
+    try {
+      applyStatus(await Api.get('/services/status'));
+    } catch (err) {
+      /* keep what is already shown */
+    }
+  }
+
+  // Review -> choose how to pay -> process -> receipt. Used by every purchase.
+  // submit(payWith) must call the API with { ..., payWith } and return its response.
   function confirmPurchase({ title, rows, price, submit, onDone, onNeedFunds }) {
     const balance = Number(user.walletBalance);
     const short = balance < price;
+    const cardOk = !siteStatus || siteStatus.services.funding !== false;
+    const defaultMethod = short ? (cardOk ? 'flutterwave' : '') : 'wallet';
     modalRoot.dataset.locked = '';
     openModal(`
       <h3 class="rcpt-title">${esc(title)}</h3>
-      <p class="rcpt-msg">Please review the details before you pay.</p>
+      <p class="rcpt-msg">Please review the details, then choose how to pay.</p>
       <div class="rcpt-rows">
         ${rowsHtml(rows)}
         <div class="rcpt-row total"><span>You pay</span><strong>${formatNaira(price)}</strong></div>
-        <div class="rcpt-row"><span>Wallet balance</span><strong>${formatNaira(balance)}</strong></div>
       </div>
-      ${short ? `<div class="notice-box">Your wallet balance is too low for this purchase. <button type="button" id="cp-fund">Fund wallet</button></div>` : ''}
+      <div class="pay-methods" id="pay-methods">
+        <label class="pay-method ${short ? 'disabled' : ''}">
+          <input type="radio" name="paywith" value="wallet" ${short ? 'disabled' : ''} ${defaultMethod === 'wallet' ? 'checked' : ''} />
+          <span class="pm-body"><strong>Wallet</strong><small>${short ? `Balance ${formatNaira(balance)}: not enough for this purchase` : `Balance ${formatNaira(balance)}`}</small></span>
+        </label>
+        ${cardOk ? `<label class="pay-method">
+          <input type="radio" name="paywith" value="flutterwave" ${defaultMethod === 'flutterwave' ? 'checked' : ''} />
+          <span class="pm-body"><strong>Card, bank transfer or USSD</strong><small>Pay ${formatNaira(price)} securely with Flutterwave</small></span>
+        </label>` : ''}
+      </div>
+      ${short && !cardOk ? `<div class="notice-box">Your wallet balance is too low for this purchase. <button type="button" id="cp-fund">Fund wallet</button></div>` : ''}
       <div class="modal-actions">
         <button type="button" class="btn btn-primary" id="cp-cancel">Cancel</button>
-        <button type="button" class="btn btn-accent" id="cp-confirm" ${short ? 'disabled' : ''}>Pay ${formatNaira(price)}</button>
+        <button type="button" class="btn btn-accent" id="cp-confirm" ${defaultMethod ? '' : 'disabled'}>Pay ${formatNaira(price)}</button>
       </div>`);
 
     $('cp-cancel').addEventListener('click', closeModal);
     $('cp-fund')?.addEventListener('click', () => { closeModal(); showView('fund'); });
     $('cp-confirm').addEventListener('click', async () => {
+      const chosen = document.querySelector('input[name="paywith"]:checked');
+      if (!chosen) return toast('Choose how you want to pay.', 'error');
+      const payWith = chosen.value;
       const btn = $('cp-confirm');
       btn.disabled = true;
-      btn.textContent = 'Processing...';
+      btn.textContent = payWith === 'flutterwave' ? 'Opening payment...' : 'Processing...';
       modalRoot.dataset.locked = '1'; // can't dismiss mid-payment
       try {
-        const data = await submit();
+        const data = await submit(payWith);
+
+        if (data.checkout) {
+          // Pay-with-Flutterwave: go to the secure checkout; the order runs once payment is confirmed.
+          localStorage.setItem('pending_funding_ref', data.reference);
+          if (data.mock) {
+            const v = await Api.post('/wallet/fund/verify', { reference: data.reference });
+            localStorage.removeItem('pending_funding_ref');
+            setUser(v.user);
+            if (v.order) receiptFromOrder(v.order);
+            onDone?.();
+            loadHomeTransactions();
+            return;
+          }
+          location.href = data.authorization_url;
+          return;
+        }
+
         setUser(data.user);
-        const state = data.pending ? 'pending' : 'success';
         showReceipt({
-          state,
+          state: data.pending ? 'pending' : 'success',
           message: data.message,
           amount: price,
-          rows: [['Service', title], ...rows],
+          rows: [['Service', title], ...rows, ['Paid with', 'Wallet']],
           token: data.token,
           cards: data.cards,
           reference: data.reference
@@ -247,7 +319,21 @@
           reference: ''
         });
         if (err.code === 'INSUFFICIENT_BALANCE') onNeedFunds?.();
+        if (err.code === 'SERVICE_DISABLED') loadStatus();
       }
+    });
+  }
+
+  // Receipt for an order that was paid through Flutterwave
+  function receiptFromOrder(order) {
+    showReceipt({
+      state: order.state === 'success' ? 'success' : order.state === 'pending' ? 'pending' : 'failed',
+      message: order.message,
+      amount: order.amount,
+      rows: [['Service', order.description], ['Paid with', 'Flutterwave']],
+      token: order.token,
+      cards: order.cards,
+      reference: order.reference
     });
   }
 
@@ -382,46 +468,92 @@
       title: `${network.toUpperCase()} Airtime`,
       rows: [['Network', network.toUpperCase()], ['Phone number', phone], ['Airtime value', formatNaira(amount)]],
       price: withMarkup(amount, markups.airtime),
-      submit: () => Api.post('/services/airtime', { network, phone, amount }),
+      submit: (payWith) => Api.post('/services/airtime', { network, phone, amount, payWith }),
       onDone: () => { e.target.reset(); updatePayHints(); }
     });
   });
 
-  // ---- Data ----
+  // ---- Data: network -> plan type -> plan ----
   const dataNetworkEl = $('data-network');
-  const dataPlanEl = $('data-plan');
+  let dataPlans = [];
+  let dataCategory = '';
+  let selectedPlan = null;
+
+  const titleCase = (t) => String(t).toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
+  function renderDataPlans() {
+    const list = dataPlans.filter((p) => p.category === dataCategory);
+    $('data-plans').innerHTML = list.map((p) => `
+      <button type="button" class="plan-item ${selectedPlan && selectedPlan.variation_code === p.variation_code ? 'selected' : ''}" data-code="${esc(p.variation_code)}">
+        <span class="plan-main"><strong>${esc(p.size || p.name)}</strong><small>${esc(p.validity || '')}</small></span>
+        <span class="plan-price">${formatNaira(p.price)}</span>
+      </button>`).join('');
+    $('data-plan-hint').textContent = list.length ? '' : 'No plans in this group right now.';
+  }
+
+  function renderDataCategories(categories) {
+    $('data-categories').innerHTML = categories.map((c) =>
+      `<button type="button" class="chip ${c.name === dataCategory ? 'active' : ''}" data-cat="${esc(c.name)}">${esc(titleCase(c.name))} <small>(${c.count})</small></button>`).join('');
+  }
+
   dataNetworkEl.addEventListener('change', async () => {
     const network = dataNetworkEl.value;
+    dataPlans = []; dataCategory = ''; selectedPlan = null;
+    $('data-cat-field').style.display = 'none';
+    $('data-plan-field').style.display = 'none';
     if (!network) return;
-    dataPlanEl.disabled = true;
-    dataPlanEl.innerHTML = '<option>Loading plans...</option>';
     try {
-      const { plans } = await Api.get(`/services/data/plans/${network}`);
-      dataPlanEl.innerHTML = plans.length
-        ? plans.map((p) => `<option value="${esc(p.variation_code)}" data-price="${p.price}" data-name="${esc(p.name)}">${esc(p.name)} — ${formatNaira(p.price)}</option>`).join('')
-        : '<option value="">No plans available right now</option>';
-      dataPlanEl.disabled = !plans.length;
+      const { plans, categories } = await Api.get(`/services/data/plans/${network}`);
+      dataPlans = plans;
+      if (!plans.length) {
+        $('data-plan-field').style.display = 'block';
+        $('data-plans').innerHTML = '';
+        $('data-plan-hint').textContent = 'No data plans are available for this network right now.';
+        return;
+      }
+      dataCategory = categories[0].name;
+      renderDataCategories(categories);
+      $('data-categories').dataset.cats = JSON.stringify(categories);
+      $('data-cat-field').style.display = 'block';
+      $('data-plan-field').style.display = 'block';
+      renderDataPlans();
     } catch (err) {
       toast(err.message, 'error');
     }
   });
 
+  $('data-categories').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-cat]');
+    if (!b) return;
+    dataCategory = b.dataset.cat;
+    selectedPlan = null;
+    renderDataCategories(JSON.parse($('data-categories').dataset.cats));
+    renderDataPlans();
+  });
+
+  $('data-plans').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-code]');
+    if (!b) return;
+    selectedPlan = dataPlans.find((p) => p.variation_code === b.dataset.code) || null;
+    renderDataPlans();
+  });
+
   $('data-form').addEventListener('submit', (e) => {
     e.preventDefault();
     const network = dataNetworkEl.value;
-    const selected = dataPlanEl.selectedOptions[0];
-    const variation_code = dataPlanEl.value;
     const phone = $('data-phone').value.trim();
-    if (!variation_code) return toast('Please choose a data plan.', 'error');
+    if (!selectedPlan) return toast('Please choose a data plan.', 'error');
+    const plan = selectedPlan;
     confirmPurchase({
       title: `${network.toUpperCase()} Data`,
-      rows: [['Network', network.toUpperCase()], ['Plan', selected.dataset.name], ['Phone number', phone]],
-      price: Number(selected.dataset.price),
-      submit: () => Api.post('/services/data', { network, phone, variation_code }),
+      rows: [['Network', network.toUpperCase()], ['Plan type', titleCase(plan.category)], ['Plan', plan.name], ['Phone number', phone]],
+      price: Number(plan.price),
+      submit: (payWith) => Api.post('/services/data', { network, phone, variation_code: plan.variation_code, payWith }),
       onDone: () => {
         e.target.reset();
-        dataPlanEl.innerHTML = '<option value="">Select a network first</option>';
-        dataPlanEl.disabled = true;
+        dataPlans = []; selectedPlan = null; dataCategory = '';
+        $('data-cat-field').style.display = 'none';
+        $('data-plan-field').style.display = 'none';
       }
     });
   });
@@ -461,6 +593,17 @@
   }
 
   // ---- Electricity ----
+  async function loadDiscos() {
+    try {
+      const { discos } = await Api.get('/services/electricity/discos');
+      $('elec-disco').innerHTML = discos.length
+        ? `<option value="">Select distribution company</option>${discos.map((d) => `<option value="${esc(d.id)}">${esc(d.name)}</option>`).join('')}`
+        : '<option value="">Not available right now</option>';
+    } catch (err) {
+      $('elec-disco').innerHTML = '<option value="">Not available right now</option>';
+    }
+  }
+
   const elecVerify = makeVerifier({
     btnId: 'elec-verify-btn',
     boxId: 'elec-verify-box',
@@ -487,7 +630,7 @@
       title: 'Electricity bill',
       rows: [['Disco', discoEl.selectedOptions[0].textContent], ['Meter type', meterType], ['Meter number', meter], ['Customer', elecVerify.name()], ['Phone number', phone], ['Units value', formatNaira(amount)]],
       price: withMarkup(amount, markups.electricity),
-      submit: () => Api.post('/services/electricity', { disco, meterType, meter, phone, amount, customerName: elecVerify.name() }),
+      submit: (payWith) => Api.post('/services/electricity', { disco, meterType, meter, phone, amount, customerName: elecVerify.name(), payWith }),
       onDone: () => { e.target.reset(); $('elec-verify-box').style.display = 'none'; updatePayHints(); }
     });
   });
@@ -536,7 +679,7 @@
       title: `${provider.toUpperCase()} subscription`,
       rows: [['Provider', provider.toUpperCase()], ['Bouquet', selected.dataset.name], ['Smartcard / IUC', smartcardNumber], ['Customer', cableVerify.name()], ['Phone number', phone]],
       price: Number(selected.dataset.price),
-      submit: () => Api.post('/services/cable', { provider, smartcardNumber, variation_code, phone, customerName: cableVerify.name() }),
+      submit: (payWith) => Api.post('/services/cable', { provider, smartcardNumber, variation_code, phone, customerName: cableVerify.name(), payWith }),
       onDone: () => {
         e.target.reset();
         $('cable-verify-box').style.display = 'none';
@@ -583,7 +726,7 @@
       title: 'Exam PIN',
       rows: [['PIN type', selected.dataset.name], ['Quantity', quantity], ['JAMB profile', profileId], ['Phone number', phone]],
       price: Number(selected.dataset.price) * quantity,
-      submit: () => Api.post('/services/exam', { examBody, variation_code, quantity, phone, profileId }),
+      submit: (payWith) => Api.post('/services/exam', { examBody, variation_code, quantity, phone, profileId, payWith }),
       onDone: () => { e.target.reset(); toggleExamProfile(); }
     });
   });
@@ -627,7 +770,11 @@
         return;
       }
       localStorage.removeItem('pending_funding_ref');
-      toast(verify.message || 'Wallet funded successfully.');
+      if (verify.order) {
+        receiptFromOrder(verify.order);
+      } else {
+        toast(verify.message || 'Wallet funded successfully.');
+      }
       loadHomeTransactions();
     } catch (err) {
       localStorage.removeItem('pending_funding_ref');
@@ -851,6 +998,9 @@
   // ---- Init ----
   renderUser();
   refreshUser().then(loadProviderStrip);
+  loadStatus();
+  setInterval(() => { if (!document.hidden) loadStatus(); }, 60000);
+  loadDiscos();
   loadHomeTransactions();
   loadExamPlans();
   loadLimits();

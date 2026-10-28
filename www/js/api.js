@@ -58,11 +58,14 @@ const Api = (() => {
       }
 
       if (!res.ok) {
-        if (res.status === 401) {
+        if (res.status === 401 || (res.status === 403 && data.code === 'ACCOUNT_SUSPENDED' && token())) {
+          const suspended = res.status === 403;
           localStorage.removeItem('almubarak_token');
           localStorage.removeItem('almubarak_user');
-          if (!location.pathname.endsWith('login.html') && !location.pathname.endsWith('/')) {
-            location.href = 'login.html';
+          const publicPages = ['login.html', 'register.html', 'forgot-password.html', 'reset-password.html', 'verify-email.html', 'index.html'];
+          const here = location.pathname.split('/').pop() || 'index.html';
+          if (!publicPages.includes(here)) {
+            location.replace(suspended ? 'login.html?suspended=1' : 'login.html');
           }
         }
         const apiErr = new Error(data.error || 'Something went wrong. Please try again.');
@@ -89,6 +92,32 @@ const Api = (() => {
     clearSession() {
       localStorage.removeItem('almubarak_token');
       localStorage.removeItem('almubarak_user');
+      localStorage.removeItem('pending_funding_ref');
+    },
+    // Log out: wipe the session and load the login page fresh (no stale data left behind).
+    logout() {
+      showLoader();
+      this.clearSession();
+      location.replace('login.html');
+    },
+    // Download a file (e.g. CSV export) from an admin endpoint.
+    async download(path, filename) {
+      showLoader();
+      try {
+        const res = await fetch(`${window.API_BASE_URL}${path}`, { headers: { Authorization: `Bearer ${token()}` } });
+        if (!res.ok) throw new Error('Could not download the file.');
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      } finally {
+        hideLoader();
+      }
     },
     currentUser() {
       const raw = localStorage.getItem('almubarak_user');
@@ -111,3 +140,13 @@ function toast(message, type = 'success') {
 function formatNaira(amount) {
   return `₦${Number(amount || 0).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
+
+// Always show fresh data after logging in or out:
+// - coming back with the browser's Back/Forward buttons reloads the page instead of showing an old copy
+// - logging in or out in one tab refreshes every other open tab
+window.addEventListener('pageshow', (e) => {
+  if (e.persisted) location.reload();
+});
+window.addEventListener('storage', (e) => {
+  if (e.key === 'almubarak_token') location.reload();
+});
