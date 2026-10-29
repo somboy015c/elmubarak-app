@@ -24,6 +24,7 @@
       btn.classList.toggle('active', btn.dataset.view === name);
     });
     if (name === 'transactions') loadFullTransactions();
+    if (name === 'notices') loadNotices(true);
     if (name === 'settings') { loadSecurityStatus(); loadBanks(); }
     if (name === 'withdraw') loadWithdrawInfo();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -335,6 +336,67 @@
       cards: order.cards,
       reference: order.reference
     });
+  }
+
+  // ---- Notices from the admin: popup + list ----
+  let notices = [];
+  let popupShowing = false;
+  const nl2br = (t) => esc(t).replace(/\n/g, '<br>');
+
+  function noticeLink(url) {
+    return /^https?:\/\//i.test(url) ? { href: url, external: true } : { href: url, external: false };
+  }
+
+  function renderNoticeList() {
+    $('notices-list').innerHTML = notices.map((n) => `
+      <div class="card notice-item ${n.read ? '' : 'unread'}">
+        <div class="notice-item-head"><strong>${esc(n.title)}</strong><small>${new Date(n.createdAt).toLocaleString('en-NG')}</small></div>
+        <p>${nl2br(n.message)}</p>
+        ${n.buttonText && n.buttonUrl ? `<a class="btn btn-accent btn-sm" href="${esc(n.buttonUrl)}" ${noticeLink(n.buttonUrl).external ? 'target="_blank" rel="noopener"' : ''}>${esc(n.buttonText)}</a>` : ''}
+      </div>`).join('');
+    $('notices-empty').style.display = notices.length ? 'none' : 'block';
+    const unread = notices.filter((n) => !n.read).length;
+    $('notice-dot').style.display = unread ? 'inline-block' : 'none';
+    $('notice-dot').textContent = unread > 9 ? '9+' : String(unread);
+  }
+
+  async function markNoticesRead(ids) {
+    try { await Api.post('/notifications/read', { ids }); } catch (e) { /* will show again next time */ }
+    notices.forEach((n) => { if (ids.includes(n.id)) n.read = true; });
+    renderNoticeList();
+  }
+
+  // Shows unread notices one at a time as a popup.
+  function showNoticePopup(queue) {
+    if (!queue.length) { popupShowing = false; return; }
+    popupShowing = true;
+    const n = queue[0];
+    const left = queue.length - 1;
+    modalRoot.dataset.locked = '';
+    openModal(`
+      <div class="notice-icon">&#128276;</div>
+      <h3 class="rcpt-title">${esc(n.title)}</h3>
+      <p class="rcpt-msg notice-text">${nl2br(n.message)}</p>
+      <div class="modal-actions wrap">
+        ${n.buttonText && n.buttonUrl ? `<a class="btn btn-accent" id="np-link" href="${esc(n.buttonUrl)}" ${noticeLink(n.buttonUrl).external ? 'target="_blank" rel="noopener"' : ''}>${esc(n.buttonText)}</a>` : ''}
+        <button type="button" class="btn btn-primary" id="np-ok">${left ? `Next (${left} more)` : 'Got it'}</button>
+      </div>`);
+    const next = async () => { await markNoticesRead([n.id]); closeModal(); showNoticePopup(queue.slice(1)); };
+    $('np-ok').addEventListener('click', next);
+    $('np-link')?.addEventListener('click', () => { markNoticesRead([n.id]); });
+  }
+
+  async function loadNotices(listOnly) {
+    try {
+      const r = await Api.get('/notifications');
+      notices = r.notifications;
+      renderNoticeList();
+      // Don't pop over something else the customer is in the middle of.
+      if (!listOnly && !popupShowing && modalRoot.style.display === 'none') {
+        const unread = notices.filter((n) => !n.read).reverse(); // oldest first
+        if (unread.length) showNoticePopup(unread);
+      }
+    } catch (err) { /* not important enough to show an error */ }
   }
 
   // ---- Transactions ----
@@ -999,6 +1061,8 @@
   renderUser();
   refreshUser().then(loadProviderStrip);
   loadStatus();
+  loadNotices(false);
+  setInterval(() => { if (!document.hidden) loadNotices(false); }, 120000);
   setInterval(() => { if (!document.hidden) loadStatus(); }, 60000);
   loadDiscos();
   loadHomeTransactions();

@@ -37,6 +37,7 @@
     <button class="nav-item" data-view="transfer" data-service="transfer"><svg class="icon" viewBox="0 0 24 24"><line x1="17" y1="7" x2="7" y2="17"/><polyline points="8 7 17 7 17 16"/></svg>Transfer</button>
     <button class="nav-item" data-view="withdraw" data-service="withdrawal"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="10" y2="15"/></svg>Withdraw</button>
     <button class="nav-item" data-view="airtime2cash" data-service="airtime-to-cash"><svg class="icon" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M9 20h6"/><path d="M9 4h6"/><path d="M12 9v3l2 1"/></svg>Airtime to Cash</button>
+    <button class="nav-item" data-view="notices"><svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Notices <span class="nav-dot" id="notice-dot" style="display:none;"></span></button>
     <button class="nav-item" data-view="settings"><svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06A1.65 1.65 0 005 15a1.65 1.65 0 00-1.51-1H3.5a2 2 0 010-4h.09A1.65 1.65 0 005 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 4.6a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09A1.65 1.65 0 0015 4.6a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</button>
     <div class="sidebar-footer">
       <a class="nav-item" href="admin.html" id="admin-link" style="display:none;"><svg class="icon" viewBox="0 0 24 24"><path d="M12 2 3 6v6c0 5 3.8 8.5 9 10 5.2-1.5 9-5 9-10V6l-9-4z"/></svg>Admin panel</a>
@@ -416,6 +417,13 @@
       </section>
 
       <!-- SETTINGS -->
+      <section class="view" id="view-notices">
+        <h2>Notices</h2>
+        <p class="muted">Messages from Elmubarak Digital Hub.</p>
+        <div id="notices-list"></div>
+        <div class="empty-state" id="notices-empty" style="display:none;">You have no notices yet.</div>
+      </section>
+
       <section class="view" id="view-settings">
         <h2>Settings</h2>
 

@@ -319,6 +319,11 @@
     $('site-maintenance').checked = sc.site.maintenance;
     $('site-maintenance-msg').value = sc.site.maintenanceMessage || '';
     $('site-notice-input').value = sc.site.notice || '';
+    $('site-app-enabled').checked = sc.site.appDownloadEnabled !== false;
+    $('site-app-url').value = sc.site.appDownloadUrl || '';
+    $('site-email-orders').checked = sc.site.emailOrders !== false;
+    $('site-email-logins').checked = sc.site.emailLogins !== false;
+    $('site-email-admin').checked = sc.site.emailAdminAlerts !== false;
 
     $('sc-services').innerHTML = sc.services.map((s) => switchHtml('service', s.key, s.on, s.label)).join('');
     $('sc-networks').innerHTML = sc.networks.map((n) => switchHtml('network', n.key, n.on, NETWORK_NAMES[n.key])).join('');
@@ -395,7 +400,12 @@
       await Api.put('/admin/site', {
         maintenance: $('site-maintenance').checked,
         maintenanceMessage: $('site-maintenance-msg').value,
-        notice: $('site-notice-input').value
+        notice: $('site-notice-input').value,
+        appDownloadEnabled: $('site-app-enabled').checked,
+        appDownloadUrl: $('site-app-url').value.trim(),
+        emailOrders: $('site-email-orders').checked,
+        emailLogins: $('site-email-logins').checked,
+        emailAdminAlerts: $('site-email-admin').checked
       });
       toast('Saved.');
     } catch (err) { toast(err.message, 'error'); }
@@ -436,9 +446,9 @@
         <tr>
           <td>${esc(r.userName)}<small>${esc(r.userEmail)}</small></td>
           <td>${esc((r.network || '').toUpperCase())}</td>
-          <td>${formatNaira(r.amount)}</td>
+          <td>${formatNaira(r.amountSent)}</td>
           <td>${formatNaira(r.cashValue)}</td>
-          <td>${esc(r.senderPhone || '')}</td>
+          <td>${esc(r.phoneUsed || '')}</td>
           <td>${esc(r.method || '')}</td>
           <td>${badge(r.status)}${r.adminNote ? `<small>${esc(r.adminNote)}</small>` : ''}</td>
           <td>${r.status === 'pending' ? `<button class="btn btn-primary btn-sm" data-aa="approve" data-id="${esc(r.id)}">Approve</button> <button class="btn btn-danger btn-sm" data-aa="reject" data-id="${esc(r.id)}">Reject</button>` : ''}</td>
@@ -487,6 +497,95 @@
     } catch (err) { toast(err.message, 'error'); }
   });
   loaders.pricing = loadPricing;
+
+  // =================================================== ANNOUNCEMENTS ====
+  const annBody = () => ({
+    audience: $('ann-audience').value,
+    email: $('ann-email').value.trim(),
+    title: $('ann-title').value.trim(),
+    message: $('ann-message').value.trim(),
+    buttonText: $('ann-btn-text').value.trim(),
+    buttonUrl: $('ann-btn-url').value.trim(),
+    sendEmail: $('ann-email-on').checked,
+    sendPopup: $('ann-popup-on').checked
+  });
+
+  function renderPreview() {
+    $('prev-title').textContent = $('ann-title').value.trim() || 'Your title';
+    $('prev-message').innerHTML = esc($('ann-message').value.trim() || 'Your message appears here.').replace(/\n/g, '<br>');
+    const t = $('ann-btn-text').value.trim();
+    $('prev-btn').style.display = t ? 'inline-block' : 'none';
+    $('prev-btn').textContent = t;
+    $('ann-count').textContent = `${$('ann-message').value.length} / 2000`;
+  }
+  ['ann-title', 'ann-message', 'ann-btn-text'].forEach((id) => $(id).addEventListener('input', renderPreview));
+
+  let audienceCount = 0;
+  async function refreshAudience() {
+    const one = $('ann-audience').value === 'user';
+    $('ann-email-field').style.display = one ? 'block' : 'none';
+    try {
+      const email = one ? $('ann-email').value.trim() : '';
+      if (one && !email) { $('ann-audience-hint').textContent = ''; audienceCount = 0; return; }
+      const r = await Api.get(`/admin/announcements/audience${one ? `?email=${encodeURIComponent(email)}` : ''}`);
+      audienceCount = r.count;
+      $('ann-audience-hint').textContent = one
+        ? (r.count ? `Found: ${r.name}` : 'No customer has this email.')
+        : `This will reach ${r.count} customer${r.count === 1 ? '' : 's'} (verified and not suspended).`;
+    } catch (e) { /* ignore */ }
+  }
+  $('ann-audience').addEventListener('change', refreshAudience);
+  $('ann-email').addEventListener('change', refreshAudience);
+
+  async function loadAnnouncements() {
+    renderPreview();
+    refreshAudience();
+    try {
+      const { announcements } = await Api.get('/admin/announcements');
+      $('ann-body').innerHTML = announcements.map((a) => `
+        <tr>
+          <td>${fmtDate(a.createdAt)}</td>
+          <td><strong>${esc(a.title)}</strong><small>${esc(String(a.message).slice(0, 80))}${a.message.length > 80 ? '...' : ''}</small></td>
+          <td>${a.audience === 'all' ? 'All customers' : esc(a.targetEmail)}<small>${a.stats?.recipients ?? 0} customer(s)</small></td>
+          <td>${a.sendEmail ? `${a.stats?.emailsSent ?? 0} sent${a.stats?.emailsFailed ? `, <span style="color:var(--danger)">${a.stats.emailsFailed} failed</span>` : ''}` : 'off'}</td>
+          <td>${a.sendPopup ? a.stats?.popups ?? 0 : 'off'}</td>
+          <td>${esc(a.createdBy?.email || '')}</td>
+          <td>${a.status === 'done' ? badge('success') : '<span class="badge badge-neutral">sending</span>'}</td>
+        </tr>`).join('');
+      $('ann-empty').style.display = announcements.length ? 'none' : 'block';
+      return announcements;
+    } catch (err) { toast(err.message, 'error'); return []; }
+  }
+
+  $('ann-test').addEventListener('click', async () => {
+    try { const r = await Api.post('/admin/announcements/test', annBody()); toast(r.message); }
+    catch (err) { toast(err.message, 'error'); }
+  });
+
+  $('ann-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const body = annBody();
+    await refreshAudience();
+    if (!audienceCount) return toast(body.audience === 'user' ? 'No customer has that email.' : 'There are no customers to send to.', 'error');
+    const how = [body.sendEmail && 'email', body.sendPopup && 'popup'].filter(Boolean).join(' + ');
+    if (!confirm(`Send "${body.title}" to ${audienceCount} customer${audienceCount === 1 ? '' : 's'} by ${how}?\n\nThis cannot be undone.`)) return;
+    try {
+      const r = await Api.post('/admin/announcements', body);
+      toast(r.message);
+      $('ann-form').reset();
+      renderPreview();
+      refreshAudience();
+      // watch the sending progress for a while
+      let tries = 0;
+      const timer = setInterval(async () => {
+        const list = await loadAnnouncements();
+        tries += 1;
+        if (tries > 20 || !list.some((a) => a.status !== 'done')) clearInterval(timer);
+      }, 4000);
+      loadAnnouncements();
+    } catch (err) { toast(err.message, 'error'); }
+  });
+  loaders.announcements = loadAnnouncements;
 
   // =================================================== LOGS ====
   const logState = { page: 1, pages: 1 };
