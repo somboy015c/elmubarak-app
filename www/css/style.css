@@ -965,3 +965,13 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 0; border-colo
 .notice-item-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 6px; }
 .notice-item-head small { color: var(--text-muted); }
 .notice-item p { margin: 0 0 12px; line-height: 1.6; }
+
+/* ---- Admin checklist ---- */
+.check-group { margin-bottom: 18px; }
+.check-group-title { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 700; margin-bottom: 6px; }
+.check-item { display: flex; align-items: flex-start; gap: 12px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; cursor: pointer; background: #fff; }
+.check-item:hover { border-color: var(--brand); }
+.check-item input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--brand); flex-shrink: 0; }
+.check-item span { display: flex; flex-direction: column; gap: 3px; }
+.check-item small { color: var(--text-muted); font-size: 0.8rem; font-weight: 400; line-height: 1.45; }
+.mono { font-family: ui-monospace, Menlo, Consolas, monospace; }

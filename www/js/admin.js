@@ -315,6 +315,31 @@
     <label class="switch-row"><span><strong>${esc(label)}</strong>${sub ? `<small>${esc(sub)}</small>` : ''}</span>
       <span class="switch"><input type="checkbox" data-type="${type}" data-key="${esc(key)}" ${on ? 'checked' : ''} /><span class="slider"></span></span></label>`;
 
+  // Services shown as a checklist, grouped. Tick = ON for customers.
+  const CHECK_GROUPS = [
+    { title: 'Buying', items: [
+      ['airtime', 'Airtime'], ['data', 'Data'], ['electricity', 'Electricity bills'], ['cable', 'Cable TV'],
+      ['exam', 'Exam PINs', 'Off until you have tested one purchase.']] },
+    { title: 'Wallet & payments', items: [
+      ['funding', 'Wallet funding and "pay with card / transfer" at checkout', 'Turn off to make customers pay from their wallet only.'],
+      ['transfer', 'Wallet-to-wallet transfers']] },
+    { title: 'Withdrawals', items: [
+      ['withdrawal', 'Withdrawals (paid manually by you)', 'Turn off and customers lose the Withdraw page AND the bank-account settings. Existing requests stay in Admin > Withdrawals.']] },
+    { title: 'Airtime to cash', items: [
+      ['airtime-to-cash', 'Airtime to cash (you check and approve each one)', 'Turn off to remove the whole Airtime-to-Cash page.'],
+      ['airtime-to-cash-auto', 'Automatic verification option', 'NOT connected to any provider yet, so it is OFF. Even if ticked it falls back to manual review unless AIRTIME2CASH_API_URL is set.']] }
+  ];
+
+  function renderChecklist() {
+    const on = Object.fromEntries(sc.services.map((s) => [s.key, s.on]));
+    $('sc-services').innerHTML = CHECK_GROUPS.map((g) => `
+      <div class="check-group"><div class="check-group-title">${esc(g.title)}</div>
+        ${g.items.map(([key, label, note]) => `
+          <label class="check-item"><input type="checkbox" data-type="service" data-key="${esc(key)}" ${on[key] ? 'checked' : ''} />
+            <span><strong>${esc(label)}</strong>${note ? `<small>${esc(note)}</small>` : ''}</span></label>`).join('')}
+      </div>`).join('');
+  }
+
   function renderServices() {
     $('site-maintenance').checked = sc.site.maintenance;
     $('site-maintenance-msg').value = sc.site.maintenanceMessage || '';
@@ -325,7 +350,7 @@
     $('site-email-logins').checked = sc.site.emailLogins !== false;
     $('site-email-admin').checked = sc.site.emailAdminAlerts !== false;
 
-    $('sc-services').innerHTML = sc.services.map((s) => switchHtml('service', s.key, s.on, s.label)).join('');
+    renderChecklist();
     $('sc-networks').innerHTML = sc.networks.map((n) => switchHtml('network', n.key, n.on, NETWORK_NAMES[n.key])).join('');
 
     $('sc-data-tabs').innerHTML = Object.keys(NETWORK_NAMES).map((n) => `<button type="button" class="chip ${n === scNetwork ? 'active' : ''}" data-net="${n}">${NETWORK_NAMES[n]}</button>`).join('');
@@ -419,21 +444,33 @@
         <tr>
           <td>${esc(w.userName)}<small>${esc(w.userEmail)}</small></td>
           <td>${formatNaira(w.amount)}</td>
-          <td>${esc(w.accountName)}<small>${esc(w.bankName)} · ${esc(w.accountNumber)}</small></td>
-          <td>${badge(w.status)}${w.adminNote ? `<small>${esc(w.adminNote)}</small>` : ''}</td>
+          <td><strong>${esc(w.accountName)}</strong><small>${esc(w.bankName)} · <span class="mono">${esc(w.accountNumber)}</span></small>
+            <button class="btn btn-sm btn-soft" data-copy="${esc(`${w.bankName} | ${w.accountNumber} | ${w.accountName} | ${w.amount}`)}">Copy details</button></td>
+          <td>${w.status === 'processing' ? '<span class="badge badge-neutral">processing</span>' : badge(w.status)}${w.adminNote ? `<small>${esc(w.adminNote)}</small>` : ''}${w.processedBy?.email ? `<small>by ${esc(w.processedBy.email)}</small>` : ''}</td>
           <td>${fmtDate(w.createdAt)}</td>
-          <td>${w.status === 'pending' ? `<button class="btn btn-primary btn-sm" data-wa="approve" data-id="${esc(w.id)}">Mark paid</button> <button class="btn btn-danger btn-sm" data-wa="reject" data-id="${esc(w.id)}">Reject</button>` : ''}</td>
+          <td>${w.status === 'pending' ? `<button class="btn btn-soft btn-sm" data-wa="processing" data-id="${esc(w.id)}">Start processing</button> ` : ''}${w.status === 'pending' || w.status === 'processing' ? `<button class="btn btn-primary btn-sm" data-wa="approve" data-id="${esc(w.id)}">Mark paid</button> <button class="btn btn-danger btn-sm" data-wa="reject" data-id="${esc(w.id)}">Reject</button>` : ''}</td>
         </tr>`).join('');
       $('withdrawals-empty').style.display = withdrawals.length ? 'none' : 'block';
     } catch (err) { toast(err.message, 'error'); }
   }
   $('withdrawals-body').addEventListener('click', async (e) => {
+    const copy = e.target.closest('[data-copy]');
+    if (copy) {
+      try { await navigator.clipboard.writeText(copy.dataset.copy); toast('Bank details copied.'); } catch (err) { toast('Could not copy.', 'error'); }
+      return;
+    }
     const b = e.target.closest('[data-wa]');
     if (!b) return;
-    const approve = b.dataset.wa === 'approve';
-    const note = prompt(approve ? 'Note (optional), e.g. transfer reference:' : 'Reason for rejecting (the wallet will be refunded):', '');
-    if (note === null) return;
-    try { const r = await Api.post(`/admin/withdrawals/${b.dataset.id}/${b.dataset.wa}`, { note }); toast(r.message); loadWithdrawals(); }
+    const action = b.dataset.wa;
+    let note = '';
+    if (action === 'approve') {
+      note = prompt('You have sent the money. Add the payment reference or a note for the customer (optional):', '');
+      if (note === null) return;
+    } else if (action === 'reject') {
+      note = prompt('Reason for rejecting. The customer sees this and the full amount goes back to their wallet:', '');
+      if (note === null) return;
+    } else if (!confirm('Tell the customer their money is being sent now?')) return;
+    try { const r = await Api.post(`/admin/withdrawals/${b.dataset.id}/${action}`, { note }); toast(r.message); loadWithdrawals(); }
     catch (err) { toast(err.message, 'error'); }
   });
   loaders.withdrawals = loadWithdrawals;
@@ -631,5 +668,8 @@
   // ---------- start ----------
   renderUser();
   refreshUser();
-  loadOverview();
+  // links in alert emails look like admin.html#withdrawals
+  const startView = (location.hash || '').replace('#', '');
+  if (startView && $(`view-${startView}`)) showView(startView); else loadOverview();
+  window.addEventListener('hashchange', () => { const v = (location.hash || '').replace('#', ''); if (v && $(`view-${v}`)) showView(v); });
 })();

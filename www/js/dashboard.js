@@ -219,6 +219,14 @@
       if (o.value && st.networks[o.value] === false) { o.hidden = true; o.disabled = true; }
       else if (o.value) { o.hidden = false; o.disabled = false; }
     });
+    // "Automatic" airtime-to-cash is only offered while the admin has it switched on.
+    const autoOn = st.services['airtime-to-cash-auto'] !== false;
+    const a2cSel = $('a2c-method');
+    if (a2cSel) {
+      const opt = a2cSel.querySelector('option[value="automatic"]');
+      if (opt) { opt.hidden = !autoOn; opt.disabled = !autoOn; }
+      if (!autoOn && a2cSel.value === 'automatic') { a2cSel.value = 'manual'; a2cSel.dispatchEvent(new Event('change')); }
+    }
     document.querySelectorAll('#cable-provider option').forEach((o) => {
       if (o.value && st.cables[o.value] === false) { o.hidden = true; o.disabled = true; }
       else if (o.value) { o.hidden = false; o.disabled = false; }
@@ -945,7 +953,30 @@
   });
 
   // ---- Withdraw ----
+  const W_STEPS = {
+    pending: { label: 'Requested', cls: 'badge-neutral', text: 'We received your request and will send the money soon.' },
+    processing: { label: 'Processing', cls: 'badge-neutral', text: 'Your money is being sent to your bank account.' },
+    success: { label: 'Paid', cls: 'badge-success', text: 'The money has been sent to your bank account.' },
+    failed: { label: 'Not completed', cls: 'badge-danger', text: 'This withdrawal was not completed. The amount was returned to your wallet.' }
+  };
+  async function loadWithdrawals() {
+    try {
+      const { withdrawals } = await Api.get('/withdrawal');
+      $('withdrawals-list').innerHTML = withdrawals.map((w) => {
+        const st = W_STEPS[w.status] || W_STEPS.pending;
+        return `<div class="card notice-item">
+          <div class="notice-item-head"><strong>${formatNaira(w.amount)}</strong><span class="badge ${st.cls}">${st.label}</span></div>
+          <p style="margin-bottom:6px;">${esc(w.bankName)} · ${esc(w.accountNumber)} (${esc(w.accountName)})</p>
+          <p class="muted" style="margin:0;">${st.text}${w.note ? ` <strong>Note:</strong> ${esc(w.note)}` : ''}</p>
+          <small class="muted">Requested ${new Date(w.createdAt).toLocaleString('en-NG')}${w.status === 'success' || w.status === 'failed' ? ` · Updated ${new Date(w.updatedAt || w.createdAt).toLocaleString('en-NG')}` : ''}</small>
+        </div>`;
+      }).join('');
+      $('withdrawals-empty').style.display = withdrawals.length ? 'none' : 'block';
+    } catch (err) { /* list is optional */ }
+  }
+
   async function loadWithdrawInfo() {
+    loadWithdrawals();
     try {
       const { hasBankAccount } = await Api.get('/security/status');
       document.getElementById('withdraw-no-bank').style.display = hasBankAccount ? 'none' : 'block';
@@ -972,6 +1003,7 @@
       toast(data.message || 'Withdrawal requested.');
       e.target.reset();
       loadHomeTransactions();
+      loadWithdrawals();
     } catch (err) {
       toast(err.message, 'error');
     } finally {

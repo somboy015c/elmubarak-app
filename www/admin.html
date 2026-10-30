@@ -211,9 +211,10 @@
       <!-- WITHDRAWALS -->
       <section class="view" id="view-withdrawals">
         <h2>Withdrawal requests</h2>
+        <p class="muted">Withdrawals are paid by hand. For each request: send the money to the bank details shown (from your bank app or the Flutterwave dashboard), then click <strong>Mark paid</strong>. <strong>Start processing</strong> is optional and tells the customer it is on its way. <strong>Reject</strong> returns the money to their wallet. Every step emails the customer and the admins.</p>
         <div class="card table-card">
           <div class="table-scroll"><table class="tx-table" id="withdrawals-table">
-            <thead><tr><th>User</th><th>Amount</th><th>Bank details</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+            <thead><tr><th>User</th><th>Amount</th><th>Send the money to</th><th>Status</th><th>Requested</th><th>Action</th></tr></thead>
             <tbody id="withdrawals-body"></tbody>
           </table></div>
           <div class="empty-state" id="withdrawals-empty" style="display:none;">No withdrawal requests yet.</div>

@@ -354,6 +354,7 @@
       <!-- WITHDRAW -->
       <section class="view" id="view-withdraw">
         <h2>Withdraw to bank account</h2>
+        <p class="muted" style="margin-bottom:14px;">Withdrawals are paid by our team. Ask below, the amount is held from your wallet, and we send it to your bank account. You will get an email at every step and can follow the status here.</p>
         <div class="card form-card" id="withdraw-no-bank" style="display:none; margin-bottom:16px;">
           <p style="margin-bottom:12px;">You haven't added a withdrawal bank account yet.</p>
           <button class="btn btn-primary btn-sm" data-view="settings">Add bank account</button>
@@ -374,6 +375,9 @@
           </div>
           <button class="btn btn-accent btn-block" type="submit">Request withdrawal</button>
         </form>
+        <h3 style="margin-top:28px;">Your withdrawal requests</h3>
+        <div id="withdrawals-list"></div>
+        <div class="empty-state" id="withdrawals-empty" style="display:none;">You have not requested a withdrawal yet.</div>
       </section>
 
       <!-- AIRTIME TO CASH -->
@@ -445,8 +449,8 @@
           <button class="btn btn-primary btn-block" type="submit" id="pin-submit-btn">Set PIN</button>
         </form>
 
-        <h3>Withdrawal Bank Account</h3>
-        <form class="card form-card" id="bank-form">
+        <h3 data-service="withdrawal">Withdrawal Bank Account</h3>
+        <form class="card form-card" id="bank-form" data-service="withdrawal">
           <div class="field">
             <label for="bank-select">Bank</label>
             <select id="bank-select" required><option value="">Loading banks...</option></select>
