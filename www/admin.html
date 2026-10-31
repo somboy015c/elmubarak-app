@@ -27,10 +27,12 @@
     </div>
     <button class="nav-item active" data-view="overview"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Overview</button>
     <button class="nav-item" data-view="transactions"><svg class="icon" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/></svg>Transactions</button>
+    <button class="nav-item" data-view="payments"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Flutterwave payments</button>
     <button class="nav-item" data-view="users"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Users</button>
     <button class="nav-item" data-view="services"><svg class="icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Services &amp; plans</button>
     <button class="nav-item" data-view="withdrawals"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Withdrawals</button>
     <button class="nav-item" data-view="airtime2cash"><svg class="icon" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M9 20h6"/></svg>Airtime to cash</button>
+    <button class="nav-item" data-view="a2csetup"><svg class="icon" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M9 20h6"/><path d="M12 7v6M9.5 10.5l2.5 2.5 2.5-2.5"/></svg>Airtime to cash setup</button>
     <button class="nav-item" data-view="pricing"><svg class="icon" viewBox="0 0 24 24"><path d="M20.59 13.41 11 3.83A2 2 0 009.59 3.24L4 3a1 1 0 00-1 1l.24 5.59a2 2 0 00.58 1.41l9.59 9.59a2 2 0 002.83 0l4.35-4.35a2 2 0 000-2.83z"/><circle cx="7.5" cy="7.5" r="1"/></svg>Pricing &amp; markup</button>
     <button class="nav-item" data-view="announcements"><svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 01-3.4 0"/></svg>Send a notice</button>
     <button class="nav-item" data-view="logs"><svg class="icon" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>Activity log</button>
@@ -125,6 +127,32 @@
           <div class="empty-state" id="admin-tx-empty" style="display:none;">No transactions match these filters.</div>
         </div>
         <div class="pager" id="tx-pager"></div>
+      </section>
+
+      <!-- FLUTTERWAVE PAYMENTS -->
+      <section class="view" id="view-payments">
+        <h2>Flutterwave payments</h2>
+        <p class="muted">Every payment customers made through Flutterwave: wallet top-ups and "pay with card" checkouts. Totals below follow your filters. If a customer says they paid but was not credited, find the payment here and press <strong>Re-check</strong>. The site asks Flutterwave and credits them (once) if it was really paid.</p>
+        <div class="stat-grid" id="pay-stats"></div>
+        <div class="stat-grid" id="pay-windows" style="margin-top:12px;"></div>
+        <div class="toolbar card" style="margin-top:16px;">
+          <input id="pay-q" type="search" placeholder="Search reference, customer name, email, phone, amount or item" />
+          <select id="pay-status"><option value="">All statuses</option><option value="success">Successful</option><option value="pending">Pending</option><option value="failed">Failed</option></select>
+          <select id="pay-kind"><option value="">All types</option><option value="topup">Wallet top-ups</option><option value="order">Order payments (checkout)</option></select>
+          <input id="pay-from" type="date" title="From" />
+          <input id="pay-to" type="date" title="To" />
+          <button class="btn btn-primary btn-sm" id="pay-apply">Apply</button>
+          <button class="btn btn-sm btn-soft" id="pay-reset">Reset</button>
+          <button class="btn btn-sm btn-soft" id="pay-export">Export CSV</button>
+        </div>
+        <div class="card table-card">
+          <div class="table-scroll"><table class="tx-table">
+            <thead><tr><th>Date</th><th>Customer</th><th>Reference</th><th>Type</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <tbody id="pay-body"></tbody>
+          </table></div>
+          <div class="empty-state" id="pay-empty" style="display:none;">No payments match these filters.</div>
+        </div>
+        <div class="pager" id="pay-pager"></div>
       </section>
 
       <!-- USERS -->
@@ -226,11 +254,31 @@
         <h2>Airtime-to-cash requests</h2>
         <div class="card table-card">
           <div class="table-scroll"><table class="tx-table" id="a2c-table">
-            <thead><tr><th>User</th><th>Network</th><th>Sent</th><th>Cash value</th><th>Phone used</th><th>Method</th><th>Status</th><th>Action</th></tr></thead>
+            <thead><tr><th>User</th><th>Network</th><th>Sent</th><th>Cash value</th><th>Sent from / to</th><th>Method</th><th>Status</th><th>Action</th></tr></thead>
             <tbody id="a2c-body"></tbody>
           </table></div>
           <div class="empty-state" id="a2c-empty" style="display:none;">No airtime-to-cash requests yet.</div>
         </div>
+      </section>
+
+      <!-- AIRTIME TO CASH SETUP -->
+      <section class="view" id="view-a2csetup">
+        <h2>Airtime to cash setup</h2>
+        <p class="muted">Where should customers send their airtime? Enter <strong>your own number for each network</strong>. A network with an <strong>empty</strong> box is <strong>not offered</strong> to customers. If every box is empty, customers cannot use airtime to cash. This is for manual mode (you check each request). Automatic mode does not need these numbers.</p>
+        <form class="card form-card" id="a2c-setup-form">
+          <div class="field"><label for="a2c-line-mtn">MTN number</label><input id="a2c-line-mtn" type="tel" placeholder="e.g. 08031234567 (leave empty to hide MTN)" /></div>
+          <div class="field"><label for="a2c-line-airtel">Airtel number</label><input id="a2c-line-airtel" type="tel" placeholder="Leave empty to hide Airtel" /></div>
+          <div class="field"><label for="a2c-line-glo">Glo number</label><input id="a2c-line-glo" type="tel" placeholder="Leave empty to hide Glo" /></div>
+          <div class="field"><label for="a2c-line-9mobile">9mobile number</label><input id="a2c-line-9mobile" type="tel" placeholder="Leave empty to hide 9mobile" /></div>
+          <div class="field">
+            <label for="a2c-setup-rate">Payout rate (%)</label>
+            <input id="a2c-setup-rate" type="number" min="1" max="100" step="1" />
+            <p class="field-hint">The % of the airtime a customer is paid in cash. Example: 80 means ₦1,000 of airtime pays ₦800.</p>
+          </div>
+          <div class="payout-box" id="a2c-setup-preview"></div>
+          <button class="btn btn-accent btn-block" type="submit">Save</button>
+        </form>
+        <div class="callout-note"><strong>Be careful:</strong> customers will send real airtime to these numbers. Only enter numbers you own and watch. Every change here is emailed to all admins.</div>
       </section>
 
       <!-- PRICING -->
@@ -251,6 +299,10 @@
           <div class="field"><label for="min-withdrawal">Minimum withdrawal (₦)</label><input id="min-withdrawal" type="number" step="1" min="0" /></div>
           <button class="btn btn-accent btn-block" type="submit">Save pricing</button>
         </form>
+
+        <h3 class="section-title">Price lists: what the supplier charges and what customers pay</h3>
+        <p class="muted">Open a list to see every item, its supplier ID, the supplier's price, the price on your website (supplier price plus your saved markup) and your profit on each. These update when you save pricing above.</p>
+        <div id="price-lists"><p class="muted">Loading the supplier's lists...</p></div>
       </section>
 
       <!-- ANNOUNCEMENTS -->

@@ -25,6 +25,7 @@
     });
     if (name === 'transactions') loadFullTransactions();
     if (name === 'notices') loadNotices(true);
+    if (name === 'airtime2cash') loadA2cOptions();
     if (name === 'settings') { loadSecurityStatus(); loadBanks(); }
     if (name === 'withdraw') loadWithdrawInfo();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -226,6 +227,8 @@
       const opt = a2cSel.querySelector('option[value="automatic"]');
       if (opt) { opt.hidden = !autoOn; opt.disabled = !autoOn; }
       if (!autoOn && a2cSel.value === 'automatic') { a2cSel.value = 'manual'; a2cSel.dispatchEvent(new Event('change')); }
+      const mf = $('a2c-method-field');
+      if (mf) mf.style.display = autoOn ? 'block' : 'none';
     }
     document.querySelectorAll('#cable-provider option').forEach((o) => {
       if (o.value && st.cables[o.value] === false) { o.hidden = true; o.disabled = true; }
@@ -424,6 +427,8 @@
   const txTypeLabel = (type) => TX_TYPE_LABELS[type] || type;
   let txCache = [];
 
+  const hasPin = (tx) => !!(tx.token || (tx.meta && tx.meta.token) || (Array.isArray(tx.cards) && tx.cards.length) || (tx.meta && Array.isArray(tx.meta.cards) && tx.meta.cards.length));
+
   function txRow(tx, withType) {
     const badgeClass = tx.status === 'success' ? 'badge-success' : tx.status === 'failed' ? 'badge-danger' : 'badge-neutral';
     const label = tx.status === 'pending' ? 'processing' : tx.status;
@@ -433,7 +438,7 @@
       <td>${formatNaira(tx.amount)}</td>
       <td><span class="badge ${badgeClass}">${esc(label)}</span></td>
       <td>${new Date(tx.createdAt).toLocaleString('en-NG')}</td>
-      <td><button type="button" class="btn-link-secondary" data-receipt="${esc(tx.id)}">View</button></td>
+      <td><button type="button" class="btn-link-secondary" data-receipt="${esc(tx.id)}">${hasPin(tx) ? 'View PIN / token' : 'View'}</button></td>
     </tr>`;
   }
 
@@ -446,8 +451,8 @@
       message: tx.status === 'failed' ? 'This transaction did not go through. Any amount debited was returned to your wallet.' : tx.status === 'pending' ? 'This order is still being processed. We will update it automatically.' : '',
       amount: tx.amount,
       rows: [['Type', txTypeLabel(tx.type)], ['Details', tx.description], ['Status', tx.status]],
-      token: tx.meta?.token,
-      cards: tx.meta?.cards,
+      token: tx.token || tx.meta?.token,
+      cards: tx.cards || tx.meta?.cards,
       reference: tx.reference,
       date: new Date(tx.createdAt).toLocaleString('en-NG')
     });
@@ -489,7 +494,7 @@
     const type = $('tx-filter-type').value;
     const status = $('tx-filter-status').value;
     const list = txCache.filter((t) => {
-      const typeOk = !type || t.type === type || (type === 'transfer' && t.type.startsWith('transfer'));
+      const typeOk = !type || (type === 'pins' ? hasPin(t) : (t.type === type || (type === 'transfer' && t.type.startsWith('transfer'))));
       return typeOk && (!status || t.status === status);
     });
     $('full-tx-body').innerHTML = list.map((t) => txRow(t, true)).join('');
@@ -919,18 +924,6 @@
     }
   });
 
-  // ---- Airtime to cash: method hint ----
-  const a2cMethodSelect = document.getElementById('a2c-method');
-  function updateA2cMethodHint() {
-    const hint = document.getElementById('a2c-method-hint');
-    hint.textContent =
-      a2cMethodSelect.value === 'automatic'
-        ? 'Verified instantly where a provider is configured — otherwise queued for manual review.'
-        : 'An admin verifies your airtime was received before crediting your wallet.';
-  }
-  a2cMethodSelect.addEventListener('change', updateA2cMethodHint);
-  updateA2cMethodHint();
-
   // ---- Transfer ----
   document.getElementById('transfer-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1011,21 +1004,119 @@
     }
   });
 
-  // ---- Airtime to Cash ----
-  document.getElementById('airtime2cash-form').addEventListener('submit', async (e) => {
+  // ---- Airtime to Cash: choose line -> amount -> proceed -> send to this number -> confirm ----
+  let a2cOpts = null;
+  let a2cDraft = null;
+
+  function a2cNetworks() {
+    const method = $('a2c-method').value;
+    if (method === 'automatic') return [['mtn', 'MTN'], ['airtel', 'Airtel'], ['glo', 'Glo'], ['9mobile', '9mobile']];
+    return (a2cOpts?.manualLines || []).map((l) => [l.network, l.label]);
+  }
+
+  function renderA2cNetworks() {
+    const list = a2cNetworks();
+    const sel = $('a2c-network');
+    const keep = sel.value;
+    sel.innerHTML = `<option value="">Select network</option>${list.map(([v, l]) => `<option value="${v}">${esc(l)}</option>`).join('')}`;
+    if (list.some(([v]) => v === keep)) sel.value = keep;
+    const none = !list.length && !(a2cOpts?.autoEnabled);
+    $('airtime2cash-form').style.display = none ? 'none' : 'block';
+    $('a2c-unavailable').style.display = none ? 'block' : 'none';
+    $('a2c-method-hint').textContent = $('a2c-method').value === 'automatic'
+      ? 'Verified instantly where a provider is configured; otherwise queued for manual review.'
+      : 'We check that your airtime arrived before crediting your wallet.';
+  }
+
+  function updatePayout() {
+    const amount = Number($('a2c-amount').value);
+    const box = $('a2c-payout');
+    if (!a2cOpts || !amount) { box.style.display = 'none'; return; }
+    const rate = Number(a2cOpts.ratePercent);
+    box.style.display = 'block';
+    box.innerHTML = `Send <strong>${formatNaira(amount)}</strong> airtime, receive <strong>${formatNaira(Math.round(amount * rate) / 100)}</strong> in your wallet <small>(${rate}% of the airtime)</small>`;
+  }
+
+  async function loadA2cOptions() {
+    try {
+      a2cOpts = await Api.get('/airtime-to-cash/options');
+      $('a2c-amount').min = a2cOpts.minAmount;
+      $('a2c-rate-hint').textContent = `You will receive ${a2cOpts.ratePercent}% of the airtime you send (minimum ${formatNaira(a2cOpts.minAmount)}).`;
+      renderA2cNetworks();
+      updatePayout();
+    } catch (err) { /* the page just stays as it is */ }
+  }
+
+  function showA2cStep(n) {
+    $('airtime2cash-form').style.display = n === 1 ? 'block' : 'none';
+    $('a2c-step2').style.display = n === 2 ? 'block' : 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  $('a2c-method').addEventListener('change', renderA2cNetworks);
+  $('a2c-amount').addEventListener('input', updatePayout);
+
+  $('airtime2cash-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('button');
+    const btn = $('a2c-proceed');
     btn.disabled = true;
     try {
-      const method = document.getElementById('a2c-method').value;
-      const network = document.getElementById('a2c-network').value;
-      const amountSent = document.getElementById('a2c-amount').value;
-      const phoneUsed = document.getElementById('a2c-phone').value.trim();
-      const pin = document.getElementById('a2c-pin').value;
-      const data = await Api.post('/airtime-to-cash', { network, amountSent, phoneUsed, pin, method });
-      toast(data.message || 'Request submitted.');
-      e.target.reset();
-      updateA2cMethodHint();
+      const method = $('a2c-method-field').style.display === 'none' ? 'manual' : $('a2c-method').value;
+      const network = $('a2c-network').value;
+      const amountSent = Number($('a2c-amount').value);
+      const phoneUsed = $('a2c-phone').value.trim();
+      let quote;
+      if (method === 'manual') {
+        quote = await Api.post('/airtime-to-cash/prepare', { network, amountSent });
+      } else {
+        quote = { network, label: $('a2c-network').selectedOptions[0].textContent, amountSent, cashValue: Math.round(amountSent * a2cOpts.ratePercent) / 100, ratePercent: a2cOpts.ratePercent, sendTo: '' };
+      }
+      a2cDraft = { method, network, amountSent, phoneUsed, quote };
+      $('a2c-summary').innerHTML = [['Network', quote.label], ['Airtime to send', formatNaira(quote.amountSent)], ['Rate', `${quote.ratePercent}%`], ['You will receive', formatNaira(quote.cashValue)], ['Sending from', phoneUsed]]
+        .map(([k, v]) => `<div class="rcpt-row"><span>${esc(k)}</span><strong>${esc(v)}</strong></div>`).join('');
+      $('a2c-sendto').innerHTML = quote.sendTo
+        ? `<div class="send-label">Send ${esc(quote.label)} airtime to</div><div class="send-number" id="a2c-number">${esc(quote.sendTo)}</div><button type="button" class="chip" id="a2c-copy">Copy number</button>`
+        : '<div class="send-label">Automatic verification</div><div class="muted">Follow the instructions you were given for automatic verification.</div>';
+      $('a2c-net-name').textContent = quote.label;
+      $('a2c-send-amount').textContent = formatNaira(quote.amountSent);
+      $('a2c-from').textContent = phoneUsed;
+      $('a2c-confirm').checked = false;
+      $('a2c-pin').value = '';
+      showA2cStep(2);
+      $('a2c-copy')?.addEventListener('click', async () => {
+        try { await navigator.clipboard.writeText(quote.sendTo); toast('Number copied.'); } catch (err) { toast('Could not copy.', 'error'); }
+      });
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  $('a2c-back').addEventListener('click', () => showA2cStep(1));
+
+  $('a2c-submit').addEventListener('click', async () => {
+    if (!a2cDraft) return;
+    if (!$('a2c-confirm').checked) return toast('Tick the box once you have sent the airtime.', 'error');
+    const pin = $('a2c-pin').value;
+    if (!/^\d{4}$/.test(pin)) return toast('Enter your 4-digit transaction PIN.', 'error');
+    const btn = $('a2c-submit');
+    btn.disabled = true;
+    try {
+      const d = a2cDraft;
+      const data = await Api.post('/airtime-to-cash', { network: d.network, amountSent: d.amountSent, phoneUsed: d.phoneUsed, pin, method: d.method, confirmedSent: true });
+      showReceipt({
+        state: 'pending',
+        title: 'Request placed',
+        message: data.message,
+        amount: d.quote.cashValue,
+        rows: [['Service', 'Airtime to cash'], ['Network', d.quote.label], ['Airtime sent', formatNaira(d.amountSent)], ['Sent from', d.phoneUsed]],
+        reference: ''
+      });
+      $('airtime2cash-form').reset();
+      a2cDraft = null;
+      updatePayout();
+      showA2cStep(1);
       loadHomeTransactions();
     } catch (err) {
       toast(err.message, 'error');
@@ -1100,5 +1191,6 @@
   loadHomeTransactions();
   loadExamPlans();
   loadLimits();
+  loadA2cOptions();
   checkPendingFunding();
 })();

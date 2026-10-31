@@ -292,6 +292,7 @@
             <option value="exam">Exam PIN</option>
             <option value="wallet-funding">Wallet funding</option>
             <option value="transfer">Transfers</option>
+            <option value="pins">PINs &amp; tokens</option>
             <option value="withdrawal">Withdrawals</option>
           </select>
           <select id="tx-filter-status" aria-label="Filter by status">
@@ -383,41 +384,57 @@
       <!-- AIRTIME TO CASH -->
       <section class="view" id="view-airtime2cash">
         <h2>Airtime to Cash</h2>
-        <p style="margin-bottom:16px;">Send airtime to our recharge number, then submit the details below. Your wallet is credited once verified.</p>
+        <p style="margin-bottom:16px;" id="a2c-intro">Turn your extra airtime into cash. Choose the line, enter the amount, and we show you where to send it. Your wallet is credited once we confirm it arrived.</p>
+
+        <div class="empty-state" id="a2c-unavailable" style="display:none;">Airtime to cash is not available at the moment. Please check again later.</div>
+
         <form class="card form-card" id="airtime2cash-form">
-          <div class="field">
+          <div class="field" id="a2c-method-field" style="display:none;">
             <label for="a2c-method">Verification method</label>
             <select id="a2c-method">
-              <option value="manual">Manual review (admin checks and credits you)</option>
+              <option value="manual">Manual review (we check and credit you)</option>
               <option value="automatic">Automatic (instant, where available)</option>
             </select>
             <p class="field-hint" id="a2c-method-hint"></p>
           </div>
           <div class="field">
-            <label for="a2c-network">Network</label>
+            <label for="a2c-network">Which line are you sending?</label>
             <select id="a2c-network" required>
               <option value="">Select network</option>
-              <option value="mtn">MTN</option>
-              <option value="airtel">Airtel</option>
-              <option value="glo">Glo</option>
-              <option value="9mobile">9mobile</option>
             </select>
           </div>
           <div class="field">
-            <label for="a2c-amount">Amount sent (₦)</label>
+            <label for="a2c-amount">Airtime you will send (₦)</label>
             <input id="a2c-amount" type="number" min="100" required placeholder="e.g. 1000" />
-            <p class="field-hint" id="a2c-rate-hint">You'll receive a percentage of face value, subject to verification.</p>
+            <p class="field-hint" id="a2c-rate-hint">You'll receive a percentage of the airtime you send.</p>
           </div>
+          <div class="payout-box" id="a2c-payout" style="display:none;"></div>
           <div class="field">
-            <label for="a2c-phone">Phone number airtime was sent from</label>
+            <label for="a2c-phone">Phone number you will send the airtime from</label>
             <input id="a2c-phone" type="tel" required placeholder="080..." />
           </div>
-          <div class="field">
-            <label for="a2c-pin">Transaction PIN</label>
-            <input id="a2c-pin" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" required placeholder="4-digit PIN" />
-          </div>
-          <button class="btn btn-accent btn-block" type="submit">Submit request</button>
+          <button class="btn btn-accent btn-block" type="submit" id="a2c-proceed">Proceed</button>
         </form>
+
+        <div class="card form-card" id="a2c-step2" style="display:none;">
+          <h3 style="margin-top:0;">Send the airtime</h3>
+          <div class="rcpt-rows" id="a2c-summary"></div>
+          <div class="send-to-box" id="a2c-sendto"></div>
+          <ol class="a2c-steps">
+            <li>Open your phone's airtime transfer (for example "Share" or "Send airtime") on the <strong id="a2c-net-name"></strong> line.</li>
+            <li>Send exactly <strong id="a2c-send-amount"></strong> to the number above, from <strong id="a2c-from"></strong>.</li>
+            <li>Come back here, tick the box and place your request.</li>
+          </ol>
+          <label class="check-item"><input type="checkbox" id="a2c-confirm" /><span><strong>I have sent the airtime</strong><small>Only tick this after the transfer is done. Requests for airtime that did not arrive will be rejected.</small></span></label>
+          <div class="field" style="margin-top:14px;">
+            <label for="a2c-pin">Transaction PIN</label>
+            <input id="a2c-pin" type="password" inputmode="numeric" maxlength="4" pattern="\d{4}" placeholder="4-digit PIN" />
+          </div>
+          <div class="modal-actions">
+            <button type="button" class="btn btn-primary" id="a2c-back">Back</button>
+            <button type="button" class="btn btn-accent" id="a2c-submit">Place my request</button>
+          </div>
+        </div>
       </section>
 
       <!-- SETTINGS -->

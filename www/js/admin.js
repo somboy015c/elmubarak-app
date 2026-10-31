@@ -485,7 +485,7 @@
           <td>${esc((r.network || '').toUpperCase())}</td>
           <td>${formatNaira(r.amountSent)}</td>
           <td>${formatNaira(r.cashValue)}</td>
-          <td>${esc(r.phoneUsed || '')}</td>
+          <td>from ${esc(r.phoneUsed || '')}${r.sendToNumber ? `<small>to ${esc(r.sendToNumber)}</small>` : ''}</td>
           <td>${esc(r.method || '')}</td>
           <td>${badge(r.status)}${r.adminNote ? `<small>${esc(r.adminNote)}</small>` : ''}</td>
           <td>${r.status === 'pending' ? `<button class="btn btn-primary btn-sm" data-aa="approve" data-id="${esc(r.id)}">Approve</button> <button class="btn btn-danger btn-sm" data-aa="reject" data-id="${esc(r.id)}">Reject</button>` : ''}</td>
@@ -504,6 +504,84 @@
     catch (err) { toast(err.message, 'error'); }
   });
   loaders.airtime2cash = loadA2C;
+
+  // =================================================== FLUTTERWAVE PAYMENTS ====
+  const payState = { page: 1, pages: 1 };
+  const payFilters = () => ({ q: $('pay-q').value.trim(), status: $('pay-status').value, kind: $('pay-kind').value, from: $('pay-from').value, to: $('pay-to').value });
+
+  async function loadPayments() {
+    try {
+      const r = await Api.get(`/admin/payments?${qs({ ...payFilters(), page: payState.page, limit: 25 })}`);
+      const s = r.stats;
+      payState.pages = r.pages; payState.page = r.page;
+      $('pay-stats').innerHTML =
+        statCard('Total successful', formatNaira(s.successful.sum), `${s.successful.count} payment${s.successful.count === 1 ? '' : 's'}`) +
+        statCard('Average payment', formatNaira(s.successful.average), `Largest: ${formatNaira(s.successful.largest)}`) +
+        statCard('Pending', formatNaira(s.pending.sum), `${s.pending.count} waiting. Use Re-check`) +
+        statCard('Failed', formatNaira(s.failed.sum), `${s.failed.count} payment${s.failed.count === 1 ? '' : 's'}`) +
+        statCard('Success rate', s.successRate === null ? '-' : `${s.successRate}%`, 'Of payments that finished') +
+        statCard('Wallet top-ups', formatNaira(s.topups.sum), `${s.topups.count} successful`) +
+        statCard('Paid at checkout', formatNaira(s.orderPayments.sum), `${s.orderPayments.count} successful`);
+      $('pay-windows').innerHTML =
+        statCard('Successful today', formatNaira(s.windows.today.sum), `${s.windows.today.count} payments`) +
+        statCard('Last 7 days', formatNaira(s.windows.week.sum), `${s.windows.week.count} payments`) +
+        statCard('Last 30 days', formatNaira(s.windows.month.sum), `${s.windows.month.count} payments`);
+      $('pay-body').innerHTML = r.payments.map((p) => `
+        <tr>
+          <td>${fmtDate(p.createdAt)}</td>
+          <td>${esc(p.userName)}<small>${esc(p.userEmail)}</small></td>
+          <td><span class="mono">${esc(p.reference)}</span></td>
+          <td>${p.kind === 'order' ? 'Paid at checkout' : 'Wallet top-up'}${p.forOrder ? `<small>${esc(p.forOrder)}${p.orderState ? ` (${esc(p.orderState)})` : ''}</small>` : ''}</td>
+          <td>${formatNaira(p.amount)}</td>
+          <td>${badge(p.status)}</td>
+          <td>${p.status !== 'success' ? `<button class="btn btn-soft btn-sm" data-recheck="${esc(p.reference)}">Re-check</button>` : ''}</td>
+        </tr>`).join('');
+      $('pay-empty').style.display = r.payments.length ? 'none' : 'block';
+      renderPager('pay-pager', payState, r.total, loadPayments);
+    } catch (err) { toast(err.message, 'error'); }
+  }
+  $('pay-body').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-recheck]');
+    if (!b) return;
+    b.disabled = true;
+    try { const r = await Api.post(`/admin/payments/${encodeURIComponent(b.dataset.recheck)}/recheck`, {}); toast(r.message, r.state === 'success' ? undefined : 'error'); loadPayments(); }
+    catch (err) { toast(err.message, 'error'); b.disabled = false; }
+  });
+  $('pay-apply').addEventListener('click', () => { payState.page = 1; loadPayments(); });
+  $('pay-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') { payState.page = 1; loadPayments(); } });
+  $('pay-reset').addEventListener('click', () => { ['pay-q', 'pay-status', 'pay-kind', 'pay-from', 'pay-to'].forEach((i) => ($(i).value = '')); payState.page = 1; loadPayments(); });
+  $('pay-export').addEventListener('click', () => Api.download(`/admin/payments.csv?${qs(payFilters())}`, 'flutterwave-payments.csv').catch((e) => toast(e.message, 'error')));
+  loaders.payments = loadPayments;
+
+  // =================================================== AIRTIME TO CASH SETUP ====
+  const A2C_LINES = ['mtn', 'airtel', 'glo', '9mobile'];
+  function previewA2c() {
+    const on = A2C_LINES.filter((n) => $(`a2c-line-${n}`).value.trim()).map((n) => NETWORK_NAMES[n]);
+    const rate = Number($('a2c-setup-rate').value) || 0;
+    $('a2c-setup-preview').innerHTML = on.length
+      ? `Customers will see: <strong>${on.join(', ')}</strong>. A customer sending ₦1,000 of airtime is paid <strong>${formatNaira(1000 * rate / 100)}</strong>.`
+      : '<strong>No network has a number yet</strong>, so customers cannot use airtime to cash in manual mode.';
+  }
+  async function loadA2cSetup() {
+    try {
+      const r = await Api.get('/admin/a2c-setup');
+      A2C_LINES.forEach((n) => { $(`a2c-line-${n}`).value = r.lines[n] || ''; });
+      $('a2c-setup-rate').value = r.ratePercent;
+      previewA2c();
+    } catch (err) { toast(err.message, 'error'); }
+  }
+  A2C_LINES.forEach((n) => $(`a2c-line-${n}`).addEventListener('input', previewA2c));
+  $('a2c-setup-rate').addEventListener('input', previewA2c);
+  $('a2c-setup-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    try {
+      const lines = Object.fromEntries(A2C_LINES.map((n) => [n, $(`a2c-line-${n}`).value.trim()]));
+      const r = await Api.put('/admin/a2c-setup', { lines, ratePercent: Number($('a2c-setup-rate').value) });
+      toast(r.message);
+      loadA2cSetup();
+    } catch (err) { toast(err.message, 'error'); }
+  });
+  loaders.a2csetup = loadA2cSetup;
 
   // =================================================== PRICING ====
   async function loadPricing() {
@@ -531,9 +609,39 @@
         withdrawal: { minAmount: Number($('min-withdrawal').value) }
       });
       toast('Pricing saved.');
+      loadPriceLists();
     } catch (err) { toast(err.message, 'error'); }
   });
-  loaders.pricing = loadPricing;
+  // ---- Price lists: supplier price vs your website price ----
+  function plTable(rows, showType) {
+    if (!rows.length) return '<p class="muted">The supplier returned nothing for this list.</p>';
+    return `<div class="table-scroll"><table class="tx-table compact"><thead><tr><th>ID</th><th>Name</th>${showType ? '<th>Type</th>' : ''}<th>Supplier price</th><th>Your website price</th><th>Your profit</th></tr></thead><tbody>
+      ${rows.map((p) => `<tr><td class="mono">${esc(p.id)}</td><td>${esc(p.name)}</td>${showType ? `<td>${esc(titleCase(p.category || ''))}</td>` : ''}<td>${formatNaira(p.supplierPrice)}</td><td><strong>${formatNaira(p.price)}</strong></td><td>${formatNaira(p.price - p.supplierPrice)}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  }
+  const plBox = (title, sub, inner, open) => `<details class="pl-box" ${open ? 'open' : ''}><summary><strong>${esc(title)}</strong><small>${esc(sub)}</small></summary><div class="pl-inner">${inner}</div></details>`;
+
+  async function loadPriceLists() {
+    $('price-lists').innerHTML = '<p class="muted">Loading the supplier\'s lists...</p>';
+    try {
+      const c = await Api.get('/admin/pricing/catalog');
+      const m = c.markups;
+      const examples = (rows, pct) => `<table class="tx-table compact"><thead><tr><th>Customer buys</th><th>Customer pays (+${pct}%)</th><th>Your profit</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${formatNaira(r.face)}</td><td><strong>${formatNaira(r.price)}</strong></td><td>${formatNaira(r.price - r.face)}</td></tr>`).join('')}</tbody></table>`;
+      const nets = `<table class="tx-table compact"><thead><tr><th>Network</th><th>Supplier ID</th></tr></thead><tbody>${c.networks.map((n) => `<tr><td>${esc(n.label)}</td><td class="mono">${esc(n.id ?? 'not found')}</td></tr>`).join('')}</tbody></table>`;
+      const dataInner = Object.keys(NETWORK_NAMES).map((n) => plBox(`${NETWORK_NAMES[n]} data plans`, `${c.data[n].length} plans`, plTable(c.data[n], true))).join('');
+      const cableInner = ['dstv', 'gotv', 'startimes'].map((n) => plBox(n.toUpperCase(), `${c.cable[n].length} packages`, plTable(c.cable[n], false))).join('');
+      const discoRows = `<table class="tx-table compact"><thead><tr><th>ID</th><th>Electricity company</th></tr></thead><tbody>${c.discos.map((d) => `<tr><td class="mono">${esc(d.id)}</td><td>${esc(d.name)}</td></tr>`).join('')}</tbody></table>`;
+      $('price-lists').innerHTML =
+        plBox('Airtime', `markup ${m.airtime}%`, `<p class="muted">Airtime has no fixed price list: customers type any amount. Your markup is added to whatever they type. Networks and their supplier IDs:</p>${nets}<p class="muted" style="margin-top:12px;">Examples at your saved markup:</p>${examples(c.airtimeExamples, m.airtime)}`) +
+        plBox('Data plans', `markup ${m.data}%`, dataInner) +
+        plBox('Cable subscriptions', `markup ${m.cable}%`, cableInner) +
+        plBox('Electricity', `markup ${m.electricity}%`, `<p class="muted">Electricity has no fixed price list either: customers type the amount. Companies and their supplier IDs:</p>${discoRows}<p class="muted" style="margin-top:12px;">Examples at your saved markup:</p>${examples(c.electricityExamples, m.electricity)}`) +
+        plBox('Exam PINs', `flat fee ${formatNaira(m.examFlatFee)}`, plTable(c.exam, false));
+    } catch (err) {
+      $('price-lists').innerHTML = `<p class="muted">${esc(err.message)}</p>`;
+    }
+  }
+  loaders.pricing = () => { loadPricing(); loadPriceLists(); };
 
   // =================================================== ANNOUNCEMENTS ====
   const annBody = () => ({

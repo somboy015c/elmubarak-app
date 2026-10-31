@@ -82,6 +82,7 @@
   const resendBtn = document.getElementById('resend-btn');
   let pendingEmail = '';
 
+  if (params.get('idle') === '1') toast('You were logged out after 15 minutes of inactivity. Please log in again.', 'error');
   if (params.get('suspended') === '1') toast('This account has been suspended. Please contact support.', 'error');
   if (params.get('verified') === '1') toast('Email verified! You can now log in.');
   if (params.get('reset') === '1') toast('Password updated. Log in with your new password.');

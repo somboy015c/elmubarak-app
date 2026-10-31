@@ -975,3 +975,22 @@ textarea:focus { outline: 2px solid var(--brand); outline-offset: 0; border-colo
 .check-item span { display: flex; flex-direction: column; gap: 3px; }
 .check-item small { color: var(--text-muted); font-size: 0.8rem; font-weight: 400; line-height: 1.45; }
 .mono { font-family: ui-monospace, Menlo, Consolas, monospace; }
+
+/* ---- Airtime to cash steps ---- */
+.payout-box { background: var(--brand-tint); border-radius: 12px; padding: 14px 16px; margin: 0 0 16px; font-size: 0.95rem; line-height: 1.5; }
+.payout-box small { color: var(--text-muted); }
+.send-to-box { background: #fff; border: 2px dashed var(--brand); border-radius: 14px; padding: 18px; text-align: center; margin: 16px 0; }
+.send-label { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 6px; }
+.send-number { font-family: var(--font-display); font-weight: 800; font-size: 1.9rem; letter-spacing: 0.04em; color: var(--ink); margin-bottom: 10px; }
+.a2c-steps { padding-left: 20px; line-height: 1.7; margin: 0 0 16px; }
+
+/* ---- Price lists ---- */
+.pl-box { border: 1px solid var(--line); border-radius: 14px; background: #fff; margin-bottom: 10px; overflow: hidden; }
+.pl-box > summary { cursor: pointer; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; list-style: none; }
+.pl-box > summary::-webkit-details-marker { display: none; }
+.pl-box > summary::after { content: '+'; font-size: 1.3rem; color: var(--brand); font-weight: 700; }
+.pl-box[open] > summary::after { content: '\2212'; }
+.pl-box > summary small { color: var(--text-muted); margin-left: auto; margin-right: 10px; }
+.pl-inner { padding: 4px 16px 16px; }
+.pl-inner .pl-box { margin: 8px 0; background: #fafcfb; }
+.callout-note { background: #FFF6E0; border-left: 4px solid #B7791F; border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 0.9rem; line-height: 1.5; color: #7a5b00; }

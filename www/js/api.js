@@ -86,12 +86,15 @@ const Api = (() => {
     post: (path, body) => request(path, { method: 'POST', body }),
     put: (path, body) => request(path, { method: 'PUT', body }),
     setSession(token, user) {
+      const isNewLogin = localStorage.getItem('almubarak_token') !== token;
       localStorage.setItem('almubarak_token', token);
       localStorage.setItem('almubarak_user', JSON.stringify(user));
+      if (isNewLogin) localStorage.setItem('almubarak_last_active', String(Date.now())); // a fresh login starts the idle clock
     },
     clearSession() {
       localStorage.removeItem('almubarak_token');
       localStorage.removeItem('almubarak_user');
+      localStorage.removeItem('almubarak_last_active');
       localStorage.removeItem('pending_funding_ref');
     },
     // Log out: wipe the session and load the login page fresh (no stale data left behind).
@@ -150,3 +153,68 @@ window.addEventListener('pageshow', (e) => {
 window.addEventListener('storage', (e) => {
   if (e.key === 'almubarak_token') location.reload();
 });
+
+// ---- Automatic logout after 15 minutes of inactivity ----
+// "Inactivity" means the person did nothing on the page (no mouse, keys, taps or scrolling) in ANY open tab.
+// Background refreshes (balance, notices) do not count as activity. A warning appears for the last minute.
+(function idleWatch() {
+  const LIMIT = 15 * 60 * 1000;
+  const WARN_AT = 14 * 60 * 1000;
+  const KEY = 'almubarak_last_active';
+  if (!localStorage.getItem('almubarak_token')) return; // not logged in: nothing to watch
+
+  const last = () => Number(localStorage.getItem(KEY)) || 0;
+  if (!last()) localStorage.setItem(KEY, String(Date.now())); // sessions from before this feature
+
+  let lastWrite = 0;
+  let bar = null;
+
+  function hideWarning() {
+    if (bar) { bar.remove(); bar = null; }
+  }
+
+  function showWarning(secondsLeft) {
+    if (!bar) {
+      bar = document.createElement('div');
+      bar.setAttribute('role', 'alert');
+      bar.style.cssText = 'position:fixed;left:12px;right:12px;bottom:84px;z-index:9999;max-width:460px;margin:0 auto;background:#14231B;color:#fff;border-radius:14px;padding:14px 16px;box-shadow:0 8px 28px rgba(0,0,0,.3);font:500 14px/1.45 Poppins,Arial,sans-serif;display:flex;gap:12px;align-items:center;justify-content:space-between;';
+      bar.innerHTML = '<span id="idle-msg"></span><button type="button" id="idle-stay" style="background:#C9A24B;color:#14231B;border:0;border-radius:10px;padding:9px 14px;font:700 13px Poppins,Arial,sans-serif;cursor:pointer;white-space:nowrap;">Stay logged in</button>';
+      document.body.appendChild(bar);
+      bar.querySelector('#idle-stay').addEventListener('click', () => touch(true));
+    }
+    bar.querySelector('#idle-msg').textContent = `You will be logged out in ${secondsLeft}s because you have been inactive.`;
+  }
+
+  function touch(force) {
+    const t = Date.now();
+    if (force || t - lastWrite > 3000) {
+      lastWrite = t;
+      try { localStorage.setItem(KEY, String(t)); } catch (e) { /* storage unavailable */ }
+    }
+    if (force) hideWarning();
+  }
+
+  function idleLogout() {
+    localStorage.removeItem('almubarak_token');
+    localStorage.removeItem('almubarak_user');
+    localStorage.removeItem(KEY);
+    localStorage.removeItem('pending_funding_ref');
+    location.replace('login.html?idle=1');
+  }
+
+  function check() {
+    if (!localStorage.getItem('almubarak_token')) return;
+    const idle = Date.now() - last();
+    if (idle >= LIMIT) return idleLogout();
+    if (idle >= WARN_AT) showWarning(Math.max(1, Math.ceil((LIMIT - idle) / 1000)));
+    else hideWarning();
+  }
+
+  ['mousemove', 'mousedown', 'keydown', 'scroll', 'touchstart', 'click'].forEach((ev) =>
+    window.addEventListener(ev, () => touch(false), { passive: true, capture: true })
+  );
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) check(); });
+  window.addEventListener('focus', check);
+  setInterval(check, 5000);
+  check(); // e.g. the laptop was asleep for an hour: log out straight away
+})();
