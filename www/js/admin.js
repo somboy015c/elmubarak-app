@@ -505,53 +505,86 @@
   });
   loaders.airtime2cash = loadA2C;
 
-  // =================================================== FLUTTERWAVE PAYMENTS ====
+  // =================================================== FLUTTERWAVE TRANSACTIONS (live from Flutterwave) ====
   const payState = { page: 1, pages: 1 };
-  const payFilters = () => ({ q: $('pay-q').value.trim(), status: $('pay-status').value, kind: $('pay-kind').value, from: $('pay-from').value, to: $('pay-to').value });
+  const ymd = (d) => new Date(d).toISOString().slice(0, 10);
+  const setRange = (daysBack) => { $('pay-to').value = ymd(Date.now()); $('pay-from').value = ymd(Date.now() - daysBack * 864e5); };
+  const payFilters = () => ({ q: $('pay-q').value.trim(), status: $('pay-status').value, type: $('pay-kind').value, from: $('pay-from').value, to: $('pay-to').value });
+  const flwBadge = (st) => `<span class="badge ${st === 'successful' ? 'badge-success' : st === 'failed' ? 'badge-danger' : 'badge-neutral'}">${esc(st || 'unknown')}</span>`;
 
-  async function loadPayments() {
+  async function loadPayments(fresh) {
+    if (!$('pay-from').value) setRange(6);
+    $('pay-info').textContent = 'Reading transactions from Flutterwave...';
     try {
-      const r = await Api.get(`/admin/payments?${qs({ ...payFilters(), page: payState.page, limit: 25 })}`);
+      const r = await Api.get(`/admin/flutterwave/transactions?${qs({ ...payFilters(), page: payState.page, limit: 25, refresh: fresh ? '1' : '' })}`);
+      if (r.mock) { $('pay-info').textContent = r.note; $('pay-body').innerHTML = ''; $('pay-empty').style.display = 'block'; return; }
       const s = r.stats;
       payState.pages = r.pages; payState.page = r.page;
+
+      if (r.balance && Number.isFinite(r.balance.available)) {
+        $('flw-balance-card').style.display = 'flex';
+        $('flw-balance').textContent = formatNaira(r.balance.available);
+        $('flw-balance-sub').textContent = Number.isFinite(r.balance.ledger) ? `Ledger balance ${formatNaira(r.balance.ledger)}` : '';
+      }
+      const nc = $('flw-notcredited');
+      if (r.notCredited > 0) {
+        nc.style.display = 'block';
+        nc.innerHTML = `<strong>${r.notCredited} successful payment${r.notCredited === 1 ? '' : 's'} made through the website ${r.notCredited === 1 ? 'is' : 'are'} not credited yet.</strong> Find ${r.notCredited === 1 ? 'it' : 'them'} below (marked "Not credited yet") and press <strong>Credit now</strong>.`;
+      } else nc.style.display = 'none';
+
       $('pay-stats').innerHTML =
-        statCard('Total successful', formatNaira(s.successful.sum), `${s.successful.count} payment${s.successful.count === 1 ? '' : 's'}`) +
-        statCard('Average payment', formatNaira(s.successful.average), `Largest: ${formatNaira(s.successful.largest)}`) +
-        statCard('Pending', formatNaira(s.pending.sum), `${s.pending.count} waiting. Use Re-check`) +
-        statCard('Failed', formatNaira(s.failed.sum), `${s.failed.count} payment${s.failed.count === 1 ? '' : 's'}`) +
+        statCard('Total successful', formatNaira(s.successful.sum), `${s.successful.count} transaction${s.successful.count === 1 ? '' : 's'}`) +
+        statCard('Average successful', formatNaira(s.successful.average), `Largest: ${formatNaira(s.successful.largest)}`) +
+        statCard('Flutterwave fees', formatNaira(s.successful.fees), 'On successful payments, as reported') +
+        statCard('Failed', formatNaira(s.failed.sum), `${s.failed.count} transaction${s.failed.count === 1 ? '' : 's'}`) +
+        statCard('Pending / other', formatNaira(s.pending.sum), `${s.pending.count} transaction${s.pending.count === 1 ? '' : 's'}`) +
         statCard('Success rate', s.successRate === null ? '-' : `${s.successRate}%`, 'Of payments that finished') +
-        statCard('Wallet top-ups', formatNaira(s.topups.sum), `${s.topups.count} successful`) +
-        statCard('Paid at checkout', formatNaira(s.orderPayments.sum), `${s.orderPayments.count} successful`);
-      $('pay-windows').innerHTML =
-        statCard('Successful today', formatNaira(s.windows.today.sum), `${s.windows.today.count} payments`) +
-        statCard('Last 7 days', formatNaira(s.windows.week.sum), `${s.windows.week.count} payments`) +
-        statCard('Last 30 days', formatNaira(s.windows.month.sum), `${s.windows.month.count} payments`);
-      $('pay-body').innerHTML = r.payments.map((p) => `
+        statCard('All transactions', String(s.total), `${r.range.from} to ${r.range.to}`);
+      $('pay-methods-list').innerHTML = s.methods.length
+        ? s.methods.map((m) => `<span class="chip" style="cursor:default;margin:0 6px 6px 0;">${esc(m.method)}: <strong>${formatNaira(m.sum)}</strong> (${m.count})</span>`).join('')
+        : 'No successful payments in this list.';
+
+      $('pay-body').innerHTML = r.transactions.map((t) => `
         <tr>
-          <td>${fmtDate(p.createdAt)}</td>
-          <td>${esc(p.userName)}<small>${esc(p.userEmail)}</small></td>
-          <td><span class="mono">${esc(p.reference)}</span></td>
-          <td>${p.kind === 'order' ? 'Paid at checkout' : 'Wallet top-up'}${p.forOrder ? `<small>${esc(p.forOrder)}${p.orderState ? ` (${esc(p.orderState)})` : ''}</small>` : ''}</td>
-          <td>${formatNaira(p.amount)}</td>
-          <td>${badge(p.status)}</td>
-          <td>${p.status !== 'success' ? `<button class="btn btn-soft btn-sm" data-recheck="${esc(p.reference)}">Re-check</button>` : ''}</td>
+          <td>${fmtDate(t.createdAt)}</td>
+          <td>${esc(t.customerName || '-')}<small>${esc(t.customerEmail)}</small></td>
+          <td><span class="mono">${esc(t.txRef)}</span><small class="mono">${esc(t.flwRef)}</small></td>
+          <td>${esc(t.typeLabel)}</td>
+          <td>${formatNaira(t.amount)}${t.fee ? `<small>fee ${formatNaira(t.fee)}</small>` : ''}</td>
+          <td>${flwBadge(t.status)}</td>
+          <td>${t.website === 'credited' ? '<span class="badge badge-success">Credited</span>' + (t.forOrder ? `<small>${esc(t.forOrder)}</small>` : '')
+            : t.website === 'not-credited' ? '<span class="badge badge-danger">Not credited yet</span>'
+            : '<small>Not from this website</small>'}</td>
+          <td>${t.website === 'not-credited' && t.status === 'successful' ? `<button class="btn btn-primary btn-sm" data-recheck="${esc(t.txRef)}">Credit now</button>` : ''}</td>
         </tr>`).join('');
-      $('pay-empty').style.display = r.payments.length ? 'none' : 'block';
-      renderPager('pay-pager', payState, r.total, loadPayments);
-    } catch (err) { toast(err.message, 'error'); }
+      $('pay-empty').style.display = r.transactions.length ? 'none' : 'block';
+      $('pay-info').textContent = `${r.total} transaction${r.total === 1 ? '' : 's'} from Flutterwave, ${r.range.from} to ${r.range.to}. Updated ${new Date(r.fetchedAt).toLocaleTimeString('en-NG')}.${r.truncated ? ' Too many transactions to read in one go: the oldest are left out. Choose a shorter range for exact totals.' : ''}`;
+      $('pay-fields').textContent = r.fieldsSeen && r.fieldsSeen.length ? `Technical: fields received from Flutterwave: ${r.fieldsSeen.join(', ')}` : '';
+      renderPager('pay-pager', payState, r.total, () => loadPayments(false));
+    } catch (err) {
+      $('pay-info').textContent = err.message;
+      toast(err.message, 'error');
+    }
   }
   $('pay-body').addEventListener('click', async (e) => {
     const b = e.target.closest('[data-recheck]');
     if (!b) return;
     b.disabled = true;
-    try { const r = await Api.post(`/admin/payments/${encodeURIComponent(b.dataset.recheck)}/recheck`, {}); toast(r.message, r.state === 'success' ? undefined : 'error'); loadPayments(); }
+    try { const r = await Api.post(`/admin/payments/${encodeURIComponent(b.dataset.recheck)}/recheck`, {}); toast(r.message, r.state === 'success' ? undefined : 'error'); loadPayments(true); }
     catch (err) { toast(err.message, 'error'); b.disabled = false; }
   });
-  $('pay-apply').addEventListener('click', () => { payState.page = 1; loadPayments(); });
-  $('pay-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') { payState.page = 1; loadPayments(); } });
-  $('pay-reset').addEventListener('click', () => { ['pay-q', 'pay-status', 'pay-kind', 'pay-from', 'pay-to'].forEach((i) => ($(i).value = '')); payState.page = 1; loadPayments(); });
-  $('pay-export').addEventListener('click', () => Api.download(`/admin/payments.csv?${qs(payFilters())}`, 'flutterwave-payments.csv').catch((e) => toast(e.message, 'error')));
-  loaders.payments = loadPayments;
+  $('flw-ranges').addEventListener('click', (e) => {
+    const b = e.target.closest('[data-range]');
+    if (!b) return;
+    document.querySelectorAll('#flw-ranges .chip').forEach((c) => c.classList.toggle('active', c === b));
+    setRange(Number(b.dataset.range));
+    payState.page = 1; loadPayments(false);
+  });
+  $('pay-apply').addEventListener('click', () => { document.querySelectorAll('#flw-ranges .chip').forEach((c) => c.classList.remove('active')); payState.page = 1; loadPayments(false); });
+  $('pay-q').addEventListener('keydown', (e) => { if (e.key === 'Enter') { payState.page = 1; loadPayments(false); } });
+  $('pay-refresh').addEventListener('click', () => { payState.page = 1; loadPayments(true); });
+  $('pay-export').addEventListener('click', () => Api.download(`/admin/flutterwave/transactions.csv?${qs(payFilters())}`, 'flutterwave-transactions.csv').catch((e) => toast(e.message, 'error')));
+  loaders.payments = () => loadPayments(false);
 
   // =================================================== AIRTIME TO CASH SETUP ====
   const A2C_LINES = ['mtn', 'airtel', 'glo', '9mobile'];

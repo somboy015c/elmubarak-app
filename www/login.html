@@ -12,6 +12,7 @@
 <body>
 <script src="js/config.js?v=20261027"></script>
 <script src="js/api.js?v=20261027"></script>
+<script src="js/otp.js?v=20261031"></script>
 <script>
   if (Api.isLoggedIn()) { location.replace('dashboard.html'); }
 </script>
@@ -31,10 +32,6 @@
       <div id="login-view">
         <h2>Log in</h2>
         <p>Access your wallet and keep topping up.</p>
-        <div id="unverified-box" class="notice-box hidden">
-          Your email isn't verified yet. We sent a link to <strong id="unverified-email"></strong>.
-          Didn't get it? <button type="button" id="resend-btn" data-label="Resend link">Resend link</button>
-        </div>
         <form id="login-form">
           <div class="field">
             <label for="email">Email address</label>
@@ -51,36 +48,14 @@
         </form>
         <div class="switch-link">New here? <a href="register.html"><strong>Create an account</strong></a></div>
       </div>
+      <div id="otp-view" class="hidden"></div>
     </div>
   </div>
 </div>
 <script src="js/password-toggle.js?v=20261027"></script>
 <script>
-
-  function startCooldown(btn, label, seconds) {
-    let left = seconds;
-    btn.disabled = true;
-    btn.textContent = label + ' (' + left + 's)';
-    const t = setInterval(() => {
-      left--;
-      if (left <= 0) { clearInterval(t); btn.disabled = false; btn.textContent = label; }
-      else btn.textContent = label + ' (' + left + 's)';
-    }, 1000);
-  }
-  async function resendVerification(email, btn) {
-    try {
-      await Api.post('/auth/resend-verification', { email });
-      toast('A new verification link has been sent. Check your inbox (and spam).');
-      startCooldown(btn, btn.dataset.label, 60);
-    } catch (err) {
-      toast(err.message, 'error');
-    }
-  }
-
   const params = new URLSearchParams(location.search);
   const emailInput = document.getElementById('email');
-  const resendBtn = document.getElementById('resend-btn');
-  let pendingEmail = '';
 
   if (params.get('idle') === '1') toast('You were logged out after 15 minutes of inactivity. Please log in again.', 'error');
   if (params.get('suspended') === '1') toast('This account has been suspended. Please contact support.', 'error');
@@ -94,14 +69,25 @@
     if (v) { e.preventDefault(); location.href = 'forgot-password.html?email=' + encodeURIComponent(v); }
   });
 
-  resendBtn.addEventListener('click', () => resendVerification(pendingEmail || emailInput.value.trim(), resendBtn));
+  function showOtp(email) {
+    const view = document.getElementById('otp-view');
+    document.getElementById('login-view').classList.add('hidden');
+    view.classList.remove('hidden');
+    OtpUI.mount(view, {
+      email,
+      autoSend: true, // they never finished sign-up, so send a fresh code right away
+      onChangeEmail() {
+        view.classList.add('hidden');
+        document.getElementById('login-view').classList.remove('hidden');
+      }
+    });
+  }
 
   document.getElementById('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = document.getElementById('submit-btn');
     btn.disabled = true;
     btn.textContent = 'Logging in...';
-    document.getElementById('unverified-box').classList.add('hidden');
     try {
       const email = emailInput.value.trim();
       const password = document.getElementById('password').value;
@@ -110,9 +96,8 @@
       location.replace('dashboard.html');
     } catch (err) {
       if (err.code === 'EMAIL_NOT_VERIFIED') {
-        pendingEmail = (err.data && err.data.email) || emailInput.value.trim();
-        document.getElementById('unverified-email').textContent = pendingEmail;
-        document.getElementById('unverified-box').classList.remove('hidden');
+        toast('Please verify your email first. We are sending you a code.', 'error');
+        showOtp((err.data && err.data.email) || emailInput.value.trim());
       } else {
         toast(err.message, 'error');
       }

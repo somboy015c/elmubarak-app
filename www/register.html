@@ -12,6 +12,7 @@
 <body>
 <script src="js/config.js?v=20261027"></script>
 <script src="js/api.js?v=20261027"></script>
+<script src="js/otp.js?v=20261031"></script>
 <script>
   if (Api.isLoggedIn()) { location.replace('dashboard.html'); }
 </script>
@@ -54,58 +55,26 @@
         <div class="switch-link">Already have an account? <a href="login.html"><strong>Log in</strong></a></div>
       </div>
 
-      <div id="check-email-view" class="auth-panel hidden">
-        <div class="panel-icon"><svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></div>
-        <h2>Check your email</h2>
-        <p>We sent a verification link to</p>
-        <div class="email-pill" id="sent-to"></div>
-        <p>Click the link in the email to activate your account, then log in. It may take a minute — check your spam folder too.</p>
-        <button type="button" class="btn btn-primary btn-block" id="resend-btn" data-label="Resend email">Resend email</button>
-        <div class="switch-link"><a href="login.html"><strong>Go to log in</strong></a> &nbsp;·&nbsp; <a href="#" id="wrong-email">Wrong email?</a></div>
-      </div>
+      <div id="otp-view" class="hidden"></div>
     </div>
   </div>
 </div>
 <script src="js/password-toggle.js?v=20261027"></script>
 <script>
-
-  function startCooldown(btn, label, seconds) {
-    let left = seconds;
-    btn.disabled = true;
-    btn.textContent = label + ' (' + left + 's)';
-    const t = setInterval(() => {
-      left--;
-      if (left <= 0) { clearInterval(t); btn.disabled = false; btn.textContent = label; }
-      else btn.textContent = label + ' (' + left + 's)';
-    }, 1000);
-  }
-  async function resendVerification(email, btn) {
-    try {
-      await Api.post('/auth/resend-verification', { email });
-      toast('A new verification link has been sent. Check your inbox (and spam).');
-      startCooldown(btn, btn.dataset.label, 60);
-    } catch (err) {
-      toast(err.message, 'error');
-    }
-  }
-
-  let registeredEmail = '';
-  const resendBtn = document.getElementById('resend-btn');
-
-  function showCheckEmail(email) {
-    registeredEmail = email;
-    document.getElementById('sent-to').textContent = email;
+  function showOtp(email, autoSend) {
+    const view = document.getElementById('otp-view');
     document.getElementById('register-view').classList.add('hidden');
-    document.getElementById('check-email-view').classList.remove('hidden');
-    startCooldown(resendBtn, resendBtn.dataset.label, 60);
+    view.classList.remove('hidden');
+    OtpUI.mount(view, {
+      email,
+      autoSend,
+      cooldown: 60,
+      onChangeEmail() {
+        view.classList.add('hidden');
+        document.getElementById('register-view').classList.remove('hidden');
+      }
+    });
   }
-
-  resendBtn.addEventListener('click', () => resendVerification(registeredEmail, resendBtn));
-  document.getElementById('wrong-email').addEventListener('click', (e) => {
-    e.preventDefault();
-    document.getElementById('check-email-view').classList.add('hidden');
-    document.getElementById('register-view').classList.remove('hidden');
-  });
 
   document.getElementById('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -118,13 +87,13 @@
       const phone = document.getElementById('phone').value.trim();
       const password = document.getElementById('password').value;
       const data = await Api.post('/auth/register', { fullName, email, phone, password });
-      showCheckEmail(data.email || email);
-      if (data.emailSent === false) toast('Account created, but the email could not be sent. Tap "Resend email".', 'error');
+      if (data.emailSent === false) toast('Account created, but the code could not be sent. Tap "Resend code".', 'error');
+      showOtp(data.email || email, false);
     } catch (err) {
       if (err.code === 'EMAIL_NOT_VERIFIED') {
-        // Already registered but never verified: take them straight to the resend screen
-        showCheckEmail((err.data && err.data.email) || document.getElementById('email').value.trim());
-        toast('This email is already registered but not verified. Resend the link below.', 'error');
+        // Registered earlier but never verified: send a fresh code and let them finish now
+        toast('This email is already registered but not verified. We are sending you a new code.', 'error');
+        showOtp((err.data && err.data.email) || document.getElementById('email').value.trim(), true);
       } else {
         toast(err.message, 'error');
       }

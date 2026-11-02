@@ -27,7 +27,7 @@
     </div>
     <button class="nav-item active" data-view="overview"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>Overview</button>
     <button class="nav-item" data-view="transactions"><svg class="icon" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="13" y2="18"/></svg>Transactions</button>
-    <button class="nav-item" data-view="payments"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Flutterwave payments</button>
+    <button class="nav-item" data-view="payments"><svg class="icon" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>Flutterwave transactions</button>
     <button class="nav-item" data-view="users"><svg class="icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>Users</button>
     <button class="nav-item" data-view="services"><svg class="icon" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>Services &amp; plans</button>
     <button class="nav-item" data-view="withdrawals"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Withdrawals</button>
@@ -131,28 +131,44 @@
 
       <!-- FLUTTERWAVE PAYMENTS -->
       <section class="view" id="view-payments">
-        <h2>Flutterwave payments</h2>
-        <p class="muted">Every payment customers made through Flutterwave: wallet top-ups and "pay with card" checkouts. Totals below follow your filters. If a customer says they paid but was not credited, find the payment here and press <strong>Re-check</strong>. The site asks Flutterwave and credits them (once) if it was really paid.</p>
+        <h2>Flutterwave transactions</h2>
+        <p class="muted">Live from Flutterwave: the same transactions as on your Flutterwave dashboard. Every number below is calculated from <strong>these</strong> transactions for the dates you choose. The "On website" column shows whether each payment was credited to the customer here.</p>
+        <div class="card provider-card" id="flw-balance-card" style="display:none;">
+          <div>
+            <div class="stat-label">Your Flutterwave balance (Naira)</div>
+            <div class="stat-value" id="flw-balance">-</div>
+            <div class="field-hint" id="flw-balance-sub"></div>
+          </div>
+        </div>
+        <div class="chip-row" id="flw-ranges" style="margin:12px 0;">
+          <button type="button" class="chip" data-range="0">Today</button>
+          <button type="button" class="chip active" data-range="6">Last 7 days</button>
+          <button type="button" class="chip" data-range="29">Last 30 days</button>
+          <button type="button" class="chip" data-range="89">Last 90 days</button>
+        </div>
+        <div class="callout-note" id="flw-notcredited" style="display:none; margin:0 0 14px;"></div>
         <div class="stat-grid" id="pay-stats"></div>
-        <div class="stat-grid" id="pay-windows" style="margin-top:12px;"></div>
+        <div class="card" style="margin-top:14px;"><h3 class="card-title">Successful payments by method</h3><div id="pay-methods-list" class="muted">-</div></div>
         <div class="toolbar card" style="margin-top:16px;">
-          <input id="pay-q" type="search" placeholder="Search reference, customer name, email, phone, amount or item" />
-          <select id="pay-status"><option value="">All statuses</option><option value="success">Successful</option><option value="pending">Pending</option><option value="failed">Failed</option></select>
-          <select id="pay-kind"><option value="">All types</option><option value="topup">Wallet top-ups</option><option value="order">Order payments (checkout)</option></select>
+          <input id="pay-q" type="search" placeholder="Search email, name, reference, phone or amount" />
+          <select id="pay-status"><option value="">All statuses</option><option value="successful">Successful</option><option value="failed">Failed</option><option value="pending">Pending / other</option></select>
+          <select id="pay-kind"><option value="">All methods</option><option value="card">Card</option><option value="banktransfer">Bank transfer</option><option value="ussd">USSD</option><option value="account">Bank account</option></select>
           <input id="pay-from" type="date" title="From" />
           <input id="pay-to" type="date" title="To" />
           <button class="btn btn-primary btn-sm" id="pay-apply">Apply</button>
-          <button class="btn btn-sm btn-soft" id="pay-reset">Reset</button>
+          <button class="btn btn-sm btn-soft" id="pay-refresh">Refresh from Flutterwave</button>
           <button class="btn btn-sm btn-soft" id="pay-export">Export CSV</button>
         </div>
+        <p class="muted" id="pay-info"></p>
         <div class="card table-card">
           <div class="table-scroll"><table class="tx-table">
-            <thead><tr><th>Date</th><th>Customer</th><th>Reference</th><th>Type</th><th>Amount</th><th>Status</th><th></th></tr></thead>
+            <thead><tr><th>Date</th><th>Customer</th><th>Reference</th><th>Method</th><th>Amount</th><th>Status</th><th>On website</th><th></th></tr></thead>
             <tbody id="pay-body"></tbody>
           </table></div>
-          <div class="empty-state" id="pay-empty" style="display:none;">No payments match these filters.</div>
+          <div class="empty-state" id="pay-empty" style="display:none;">No Flutterwave transactions match these filters.</div>
         </div>
         <div class="pager" id="pay-pager"></div>
+        <p class="muted" id="pay-fields" style="font-size:0.75rem;"></p>
       </section>
 
       <!-- USERS -->
