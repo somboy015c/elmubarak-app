@@ -100,6 +100,23 @@
     }
   }
   $('vtpass-refresh').addEventListener('click', loadProviderBalance);
+  // Forget remembered prices and read the supplier's lists again (e.g. after the account was moved to the API plan)
+  async function refreshPrices(btn) {
+    const old = btn ? btn.textContent : '';
+    if (btn) { btn.disabled = true; btn.textContent = 'Refreshing...'; }
+    try {
+      const r = await Api.post('/admin/provider/refresh', {});
+      toast(r.message);
+      loadProviderBalance();
+      if ($('view-pricing').classList.contains('active')) loadPriceLists();
+    } catch (err) {
+      toast(err.message, 'error');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = old; }
+    }
+  }
+  $('provider-refresh-prices').addEventListener('click', (e) => refreshPrices(e.currentTarget));
+  $('pl-refresh').addEventListener('click', (e) => refreshPrices(e.currentTarget));
   $('provider-check-btn').addEventListener('click', async () => {
     const out = $('provider-check-out');
     out.style.display = 'block';
@@ -659,6 +676,7 @@
     try {
       const c = await Api.get('/admin/pricing/catalog');
       const m = c.markups;
+      if (c.basis) $('pl-basis').textContent = `Supplier prices are read from "${c.basis.field}" for your account type "${c.basis.accountType || 'unknown'}".`;
       const examples = (rows, pct) => `<table class="tx-table compact"><thead><tr><th>Customer buys</th><th>Customer pays (+${pct}%)</th><th>Your profit</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${formatNaira(r.face)}</td><td><strong>${formatNaira(r.price)}</strong></td><td>${formatNaira(r.price - r.face)}</td></tr>`).join('')}</tbody></table>`;
       const nets = `<table class="tx-table compact"><thead><tr><th>Network</th><th>Supplier ID</th></tr></thead><tbody>${c.networks.map((n) => `<tr><td>${esc(n.label)}</td><td class="mono">${esc(n.id ?? 'not found')}</td></tr>`).join('')}</tbody></table>`;
       const dataInner = Object.keys(NETWORK_NAMES).map((n) => plBox(`${NETWORK_NAMES[n]} data plans`, `${c.data[n].length} plans`, plTable(c.data[n], true))).join('');
