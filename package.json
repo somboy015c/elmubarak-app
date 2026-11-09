@@ -9,20 +9,23 @@
     "sync": "cap sync",
     "android": "cap open android",
     "ios": "cap open ios",
-    "build:android": "cd android && ./gradlew assembleRelease",
+    "build:android": "cd android && ./gradlew assembleRelease bundleRelease",
     "bump-and-sync": "node scripts/bump-version.js && cap sync"
   },
   "dependencies": {
-    "@capacitor/android": "^6.1.0",
-    "@capacitor/app": "^6.0.0",
-    "@capacitor/core": "^6.1.0",
-    "@capacitor/haptics": "^6.0.0",
-    "@capacitor/ios": "^6.1.0",
-    "@capacitor/splash-screen": "^6.0.0",
-    "@capacitor/status-bar": "^6.0.0"
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/app": "^8.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/haptics": "^8.0.0",
+    "@capacitor/ios": "^8.0.0",
+    "@capacitor/splash-screen": "^8.0.0",
+    "@capacitor/status-bar": "^8.0.0"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.4",
-    "@capacitor/cli": "^6.1.0"
+    "@capacitor/cli": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

@@ -155,14 +155,24 @@ after future rebuilds.
 Also runs daily (edit the `cron` line in
 `.github/workflows/update-and-build.yml` to change that).
 
-For a **signed release APK** (Play Store), add these repo secrets and swap
-`assembleDebug` for `assembleRelease` in the workflow, decoding the keystore
-in a step beforehand:
+### Signing (required before the first build)
 
-- `ANDROID_KEYSTORE_BASE64`
+The workflow builds a signed APK for your website and a signed `.aab` for Google Play.
+Create one keystore and keep a backup: Play updates depend on it.
+
+```bash
+keytool -genkeypair -v -keystore elmubarak-release.jks -alias elmubarak -keyalg RSA -keysize 2048 -validity 10000
+base64 -w0 elmubarak-release.jks > keystore.b64
+```
+
+Add these under **Settings > Secrets and variables > Actions**:
+
+- `ANDROID_KEYSTORE_BASE64` (contents of `keystore.b64`)
 - `ANDROID_KEYSTORE_PASSWORD`
-- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_ALIAS` (`elmubarak`)
 - `ANDROID_KEY_PASSWORD`
+
+Then run the workflow with **force rebuild** ticked. The `.aab` is in the run's artifacts.
 
 ## Assets included
 

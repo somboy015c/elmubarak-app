@@ -1,44 +1,27 @@
-// Adds <link>/<script> tags for the native bridge into the freshly-synced
-// dashboard.html. It only ever APPENDS tags — your file's own markup,
-// styling and logic are never rewritten or removed.
+// Adds the app-only <link>/<script> tags to the freshly-synced pages. It only
+// ever APPENDS tags: your files' own markup, styling and logic are never changed.
 
 const fs = require("fs");
 const path = require("path");
 
 const WWW_DIR = path.join(__dirname, "..", "www");
-const TARGET_PAGES = ["dashboard.html"]; // add "login.html", "register.html" here too if you want the same status-bar/back-button polish on those screens
+const css = (f) => `<link rel="stylesheet" href="native/${f}" />`;
+const js = (f) => `<script src="native/${f}"></script>`;
 
-const CSS_TAG = `<link rel="stylesheet" href="native/bridge.css" />`;
-const JS_TAG = `<script src="native/bridge.js"></script>`;
+const PAGES = {
+  "dashboard.html": { head: [css("bridge.css"), css("quick-login.css")], body: [js("bridge.js"), js("quick-login.js")] },
+  "login.html": { head: [], body: [js("quick-login.js")] }
+};
 
-for (const page of TARGET_PAGES) {
+for (const [page, tags] of Object.entries(PAGES)) {
   const filePath = path.join(WWW_DIR, page);
   if (!fs.existsSync(filePath)) {
-    console.log(`Skipping ${page} — not found (did sync-source.js run first?)`);
+    console.log(`Skipping ${page} (not found; did sync-source.js run first?)`);
     continue;
   }
-
   let html = fs.readFileSync(filePath, "utf8");
-
-  if (html.includes(CSS_TAG) || html.includes(JS_TAG)) {
-    console.log(`${page} already has the bridge injected — skipping.`);
-    continue;
-  }
-
-  if (html.includes("</head>")) {
-    html = html.replace("</head>", `${CSS_TAG}\n</head>`);
-  } else {
-    console.warn(`${page}: no </head> found, appending CSS tag at top of file`);
-    html = CSS_TAG + "\n" + html;
-  }
-
-  if (html.includes("</body>")) {
-    html = html.replace("</body>", `${JS_TAG}\n</body>`);
-  } else {
-    console.warn(`${page}: no </body> found, appending JS tag at end of file`);
-    html += "\n" + JS_TAG;
-  }
-
+  for (const tag of tags.head) if (!html.includes(tag)) html = html.replace("</head>", `${tag}\n</head>`);
+  for (const tag of tags.body) if (!html.includes(tag)) html = html.replace("</body>", `${tag}\n</body>`);
   fs.writeFileSync(filePath, html);
-  console.log(`Injected native bridge into ${page}`);
+  console.log(`Native tags are in ${page}`);
 }
