@@ -6,3 +6,5 @@ ios/App/build/
 ios/App/Pods/
 .DS_Store
 *.log
+*.jks
+*.keystore
