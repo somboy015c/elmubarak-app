@@ -66,7 +66,7 @@ jobs:
         if: steps.compare.outputs.changed == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Set up JDK
         if: steps.compare.outputs.changed == 'true'
@@ -105,26 +105,35 @@ jobs:
         if: steps.compare.outputs.changed == 'true'
         run: npx cap sync android
 
-      - name: Build Android APK (debug, unsigned)
+      - name: Build signed Android APK and App Bundle
         if: steps.compare.outputs.changed == 'true'
-        working-directory: android
-        run: ./gradlew assembleDebug
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::Add the ANDROID_KEYSTORE_* repository secrets first (see README)."
+            exit 1
+          fi
+          export ANDROID_KEYSTORE_PATH="$RUNNER_TEMP/release.jks"
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$ANDROID_KEYSTORE_PATH"
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleRelease bundleRelease
+          cd ..
+          cp android/app/build/outputs/apk/release/app-release.apk Elmubarak-DH.apk
+          cp android/app/build/outputs/bundle/release/app-release.aab Elmubarak-DH.aab
 
-        # To ship a signed release build instead, add these repo secrets:
-        #   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD,
-        #   ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
-        # decode the keystore in a prior step and run `./gradlew assembleRelease`.
-
-      - name: Rename APK
-        if: steps.compare.outputs.changed == 'true'
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk Elmubarak-DH.apk
-
-      - name: Upload APK artifact
+      - name: Upload build artifacts
         if: steps.compare.outputs.changed == 'true'
         uses: actions/upload-artifact@v4
         with:
-          name: elmubarak-digital-hub-debug
-          path: Elmubarak-DH.apk
+          name: elmubarak-digital-hub-release
+          path: |
+            Elmubarak-DH.apk
+            Elmubarak-DH.aab
 
       - name: Publish to Releases
         if: steps.compare.outputs.changed == 'true'
@@ -148,6 +157,6 @@ jobs:
           echo "${{ steps.source.outputs.latest_sha }}" > .sync/last-source.sha
           git config user.name "elmubarak-bot"
           git config user.email "bot@elmubarak.local"
-          git add .sync/last-source.sha www/login.html www/register.html www/dashboard.html www/admin.html www/css www/js www/assets android
+          git add .sync/last-source.sha www/*.html www/css www/js www/assets android
           git diff --cached --quiet || git commit -m "chore: sync web app source to ${{ steps.source.outputs.latest_sha }} [skip ci]"
           git push
