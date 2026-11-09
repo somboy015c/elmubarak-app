@@ -676,7 +676,13 @@
     try {
       const c = await Api.get('/admin/pricing/catalog');
       const m = c.markups;
-      if (c.basis) $('pl-basis').textContent = `Supplier prices are read from "${c.basis.field}" for your account type "${c.basis.accountType || 'unknown'}".`;
+      if (c.basis) {
+        const b = c.basis;
+        const when = b.readAt ? new Date(b.readAt).toLocaleString() : '';
+        $('pl-basis').textContent = b.pricingPage
+          ? `Data and exam prices come from the "${b.column}" column of arrifqubundle.com/pricing (${b.matched} of ${b.total} data plans matched, read ${when}). Any others, and all cable prices, come from the supplier's API.${b.pageError ? ` Last refresh failed: ${b.pageError}` : ''}`
+          : `Warning: the pricing page could not be used, so these are the API's prices for account type "${b.accountType || 'unknown'}" and may be higher than you really pay.${b.pageError ? ` Reason: ${b.pageError}` : ''}`;
+      }
       const examples = (rows, pct) => `<table class="tx-table compact"><thead><tr><th>Customer buys</th><th>Customer pays (+${pct}%)</th><th>Your profit</th></tr></thead><tbody>${rows.map((r) => `<tr><td>${formatNaira(r.face)}</td><td><strong>${formatNaira(r.price)}</strong></td><td>${formatNaira(r.price - r.face)}</td></tr>`).join('')}</tbody></table>`;
       const nets = `<table class="tx-table compact"><thead><tr><th>Network</th><th>Supplier ID</th></tr></thead><tbody>${c.networks.map((n) => `<tr><td>${esc(n.label)}</td><td class="mono">${esc(n.id ?? 'not found')}</td></tr>`).join('')}</tbody></table>`;
       const dataInner = Object.keys(NETWORK_NAMES).map((n) => plBox(`${NETWORK_NAMES[n]} data plans`, `${c.data[n].length} plans`, plTable(c.data[n], true))).join('');

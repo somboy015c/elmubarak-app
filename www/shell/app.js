@@ -27,8 +27,14 @@ function isAlreadyLoggedIn() {
   catch (e) { return false; }
 }
 
+function hasQuickLogin() {
+  try { return !!localStorage.getItem("eh_quick_login"); }
+  catch (e) { return false; }
+}
+
 function handOff() {
-  location.href = isAlreadyLoggedIn() ? APP_CONFIG.DASHBOARD_PAGE : APP_CONFIG.LOGIN_PAGE;
+  if (hasQuickLogin()) { location.replace("unlock.html"); return; }
+  location.replace(isAlreadyLoggedIn() ? APP_CONFIG.DASHBOARD_PAGE : APP_CONFIG.LOGIN_PAGE);
 }
 
 /* ---------- SPLASH ---------- */

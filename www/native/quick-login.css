@@ -1,0 +1,25 @@
+.ql-sheet-wrap{position:fixed;inset:0;z-index:10000;display:flex;align-items:flex-end;justify-content:center;background:rgba(11,30,22,.55)}
+.ql-sheet{width:100%;max-width:460px;max-height:92%;overflow:auto;background:#fff;border-radius:22px 22px 0 0;padding:24px 20px 20px}
+.ql-sheet h3{margin:0 0 6px}
+.ql-sheet p{margin:0 0 16px}
+.ql-sheet .btn+.btn{margin-top:10px}
+.ql-check{display:flex;align-items:center;gap:10px;margin:0 0 16px;font-weight:500}
+.ql-check input{width:20px;height:20px;accent-color:#146C43}
+
+.unlock{min-height:100vh;min-height:100dvh;box-sizing:border-box;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:#fff;text-align:center}
+.unlock-logo{width:68px;height:68px;border-radius:18px}
+.unlock h1{margin:16px 0 4px;font-size:1.3rem}
+.unlock-sub{margin:0;color:#6B7A72;font-size:.92rem}
+.unlock-dots{display:flex;gap:18px;margin:28px 0 8px}
+.unlock-dots i{width:15px;height:15px;border-radius:50%;border:2px solid #146C43;transition:background .12s}
+.unlock-dots i.on{background:#146C43}
+.unlock-dots.shake{animation:ql-shake .32s}
+.unlock-error{min-height:22px;margin:0 0 10px;color:#C0392B;font-size:.88rem}
+.unlock-pad{display:grid;grid-template-columns:repeat(3,76px);gap:12px;justify-content:center}
+.unlock-pad button{height:66px;border:0;border-radius:50%;background:#EEF5F1;color:#14231B;font:600 1.45rem Poppins,sans-serif}
+.unlock-pad button:active{background:#CFE6DA}
+.unlock-pad button.plain{background:none;color:#146C43}
+.unlock-pad button[hidden]{visibility:hidden;display:block}
+.unlock-pad svg{width:30px;height:30px}
+.unlock-link{margin-top:22px;border:0;background:none;color:#146C43;font:600 .92rem Poppins,sans-serif}
+@keyframes ql-shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}

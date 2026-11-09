@@ -69,8 +69,8 @@
       observer.observe(el, { attributes: true }));
   }
 
-  // Android hardware back button: close the drawer if open, else go back a
-  // view, else let Capacitor's default (minimize app) happen.
+  // Android hardware back button: close the drawer if open, else go back to
+  // the home view, else leave the app.
   function wireBackButton() {
     if (!window.Capacitor?.Plugins?.App) return;
     window.Capacitor.Plugins.App.addListener("backButton", () => {
@@ -83,7 +83,9 @@
       const activeView = document.querySelector(".view.active");
       if (activeView && activeView.id !== "view-home") {
         document.querySelector('.nav-item[data-view="home"]')?.click();
+        return;
       }
+      window.Capacitor.Plugins.App.exitApp();
     });
   }
 

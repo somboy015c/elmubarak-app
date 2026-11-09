@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+<title>Unlock</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css" />
+<link rel="stylesheet" href="native/quick-login.css" />
+</head>
+<body>
+<main class="unlock">
+  <img class="unlock-logo" src="assets/icon.png" alt="Elmubarak Digital Hub" />
+  <h1 id="hello">Welcome back</h1>
+  <p class="unlock-sub">Enter your 4-digit PIN</p>
+  <div class="unlock-dots" id="dots" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+  <p class="unlock-error" id="error" role="alert"></p>
+  <div class="unlock-pad" id="pad">
+    <button type="button" data-d="1">1</button><button type="button" data-d="2">2</button><button type="button" data-d="3">3</button>
+    <button type="button" data-d="4">4</button><button type="button" data-d="5">5</button><button type="button" data-d="6">6</button>
+    <button type="button" data-d="7">7</button><button type="button" data-d="8">8</button><button type="button" data-d="9">9</button>
+    <button type="button" class="plain" id="bio" aria-label="Use fingerprint" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M12 11v3a7 7 0 0 1-1.2 4"/><path d="M8.2 19.5A10 10 0 0 0 9 14v-2a3 3 0 0 1 6 0v2c0 1.6-.2 3.1-.6 4.5"/><path d="M5.5 16.5c.3-.8.5-1.6.5-2.5v-2a6 6 0 0 1 9.5-4.9"/><path d="M18 11.5V14c0 1.2-.1 2.3-.3 3.4"/><path d="M3.6 12A8.5 8.5 0 0 1 17 5.1"/></svg></button>
+    <button type="button" data-d="0">0</button>
+    <button type="button" class="plain" id="back" aria-label="Delete"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 5H9l-6 7 6 7h12z"/><path d="M13 10l4 4M17 10l-4 4"/></svg></button>
+  </div>
+  <button type="button" class="unlock-link" id="password">Use password instead</button>
+</main>
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="native/quick-login.js"></script>
+<script>
+(function () {
+  const q = QuickLogin.read();
+  if (!q) { location.replace('login.html?password=1'); return; }
+  Api.clearSession(); // the wallet stays closed until the PIN or fingerprint succeeds
+
+  const $ = (id) => document.getElementById(id);
+  const dots = [...$('dots').children];
+  let pin = '';
+  let busy = false;
+
+  if (q.firstName) $('hello').textContent = `Welcome back, ${q.firstName}`;
+  const paint = () => dots.forEach((d, i) => d.classList.toggle('on', i < pin.length));
+  function fail(message) {
+    pin = ''; paint();
+    $('error').textContent = message;
+    $('dots').classList.remove('shake'); void $('dots').offsetWidth; $('dots').classList.add('shake');
+  }
+
+  async function unlock(body) {
+    if (busy) return;
+    busy = true;
+    $('error').textContent = '';
+    try {
+      const data = await Api.post('/auth/device/login', { deviceId: q.deviceId, ...body });
+      Api.setSession(data.token, data.user);
+      location.replace('dashboard.html');
+    } catch (err) {
+      busy = false;
+      if (err.code === 'DEVICE_REVOKED') {
+        QuickLogin.clear();
+        location.replace('login.html?password=1');
+        return;
+      }
+      fail(err.message);
+    }
+  }
+
+  $('pad').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b || busy || !b.dataset.d || pin.length >= 4) return;
+    pin += b.dataset.d; paint();
+    $('error').textContent = '';
+    if (pin.length === 4) unlock({ secret: q.secret, pin });
+  });
+  $('back').addEventListener('click', () => { if (!busy) { pin = pin.slice(0, -1); paint(); } });
+  $('password').addEventListener('click', () => location.replace('login.html?password=1'));
+
+  async function useFingerprint() {
+    if (busy) return;
+    if (await QuickLogin.biometricPrompt('Unlock your wallet')) unlock({ bioSecret: q.bioSecret });
+  }
+  $('bio').addEventListener('click', useFingerprint);
+  (async () => {
+    if (q.bioSecret && await QuickLogin.biometricAvailable()) {
+      $('bio').hidden = false;
+      useFingerprint();
+    }
+  })();
+})();
+</script>
+</body>
+</html>
