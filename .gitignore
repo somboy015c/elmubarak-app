@@ -7,4 +7,4 @@ ios/App/Pods/
 .DS_Store
 *.log
 *.jks
-*.keystore
+*.keystroke
