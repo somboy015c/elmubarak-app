@@ -17,7 +17,7 @@ const WWW_DIR = path.join(__dirname, "..", "www");
 // Files/folders copied as-is from the source repo. index.html is deliberately
 // EXCLUDED — that's your marketing landing page, and the mobile app's own
 // splash/onboarding index.html replaces it as the entry point.
-const INCLUDE = ["login.html", "register.html", "forgot-password.html", "reset-password.html", "verify-email.html", "dashboard.html", "admin.html", "css", "js", "assets"];
+const INCLUDE = ["login.html", "register.html", "forgot-password.html", "reset-password.html", "verify-email.html", "privacy.html", "delete-account.html", "dashboard.html", "admin.html", "css", "js", "assets"];
 
 function run(cmd, cwd) {
   execSync(cmd, { cwd, stdio: "inherit" });
