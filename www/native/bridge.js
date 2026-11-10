@@ -238,6 +238,15 @@
     sync();
   }
 
+  // Tapping anywhere on a transaction row opens its receipt.
+  function wireTxRows() {
+    document.addEventListener("click", (e) => {
+      const row = e.target.closest("table.tx-table tbody tr");
+      if (!row || e.target.closest("button, a")) return;
+      row.querySelector("[data-receipt]")?.click();
+    });
+  }
+
   // ---------- Keep everything in step with the website's own view switching ----------
   function watchViews() {
     const update = () => { paintTopBar(); highlightTab(); };
@@ -276,6 +285,7 @@
     buildBottomNav();
     buildMore();
     buildDataCategorySelect();
+    wireTxRows();
     watchViews();
     wireBackButton();
     wireStatusBar();

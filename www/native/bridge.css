@@ -114,3 +114,31 @@ html.eh-native-shell #data-categories{ display:none !important; }
   width:100%; margin-top:8px; padding:13px 14px; border:1px solid var(--line, #DCEAE2); border-radius:12px;
   background:#fff; color:var(--ink, #0B3D2B); font-weight:600;
 }
+
+/* ---------- Transactions as a list (home "Recent transactions" and History) ----------
+   Row 1: description ............ amount
+   Row 2: type · date ............ status
+   The whole row opens the receipt. */
+html.eh-native-shell table.tx-table,
+html.eh-native-shell table.tx-table tbody{ display:block; width:100%; }
+html.eh-native-shell table.tx-table thead{ display:none; }
+html.eh-native-shell table.tx-table tr{
+  display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:14px; row-gap:3px; align-items:center;
+  padding:14px 16px; border-bottom:1px solid var(--line, #DCEAE2); cursor:pointer;
+}
+html.eh-native-shell table.tx-table tr:last-child{ border-bottom:0; }
+html.eh-native-shell table.tx-table tr:active{ background:#F2F8F4; }
+html.eh-native-shell table.tx-table td{ display:block; min-width:0; padding:0 !important; border:0 !important; }
+html.eh-native-shell table.tx-table td:first-child{ grid-column:1; grid-row:1; font-weight:600; color:var(--ink, #0B3D2B); overflow-wrap:anywhere; line-height:1.35; }
+html.eh-native-shell table.tx-table td:last-child{ display:none; } /* the "View" link: the row itself opens the receipt */
+html.eh-native-shell table.tx-table td:has(> .badge){ grid-column:2; grid-row:2; justify-self:end; }
+html.eh-native-shell table.tx-table .badge{ white-space:nowrap; }
+/* home table: description, amount, status, date */
+html.eh-native-shell #home-tx-table td:nth-child(2){ grid-column:2; grid-row:1; justify-self:end; font-weight:700; white-space:nowrap; color:var(--ink, #0B3D2B); }
+html.eh-native-shell #home-tx-table td:nth-child(4){ grid-column:1; grid-row:2; font-size:.78rem; color:#6B7A72; }
+/* history table: description, type, amount, status, date */
+html.eh-native-shell #full-tx-table td:nth-child(2){ grid-column:1; grid-row:2; font-size:.78rem; color:#6B7A72; }
+html.eh-native-shell #full-tx-table td:nth-child(3){ grid-column:2; grid-row:1; justify-self:end; font-weight:700; white-space:nowrap; color:var(--ink, #0B3D2B); }
+html.eh-native-shell #full-tx-table td:nth-child(5){ grid-column:1 / -1; grid-row:3; font-size:.78rem; color:#6B7A72; }
+html.eh-native-shell .table-scroll{ overflow:visible; }
+html.eh-native-shell .table-scroll .tx-table{ min-width:0; }

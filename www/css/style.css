@@ -751,11 +751,13 @@ table.tx-table tr:last-child td { border-bottom: none; }
   color: #fff; border-radius: var(--radius-lg); padding: 24px; margin-bottom: 18px;
 }
 .wallet-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.wallet-top > :first-child { min-width: 0; flex: 1; }
+.wallet-greet { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .wallet-greet { font-size: 0.85rem; opacity: 0.85; margin-bottom: 14px; }
 .wallet-label { font-size: 0.78rem; opacity: 0.8; display: flex; align-items: center; gap: 8px; }
 .wallet-eye { background: rgba(255,255,255,0.18); border: 0; color: #fff; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
 .wallet-eye .icon { stroke: #fff; }
-.wallet-balance { font-family: var(--font-display); font-weight: 800; font-size: 2.1rem; margin: 4px 0 2px; letter-spacing: -0.01em; }
+.wallet-balance { font-family: var(--font-display); font-weight: 800; font-size: clamp(1.45rem, 7.5vw, 2.1rem); overflow-wrap: anywhere; margin: 4px 0 2px; letter-spacing: -0.01em; }
 .wallet-avatar { background: rgba(255,255,255,0.2) !important; color: #fff !important; width: 44px; height: 44px; font-size: 1.1rem; flex-shrink: 0; }
 .wallet-actions { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
 .wallet-action {
