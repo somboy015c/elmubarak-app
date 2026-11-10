@@ -10,3 +10,14 @@ html.eh-native-shell .whatsapp-float-btn{ bottom: calc(var(--eh-bottomnav-h, 66p
 
 /* the closed menu sits just off the right edge; its shadow was showing as a grey strip */
 .sidebar:not(.open){ box-shadow: none !important; }
+
+/* No full-screen spinner in the app: a thin moving bar at the top, like Android apps.
+   The page still ignores taps while it loads so nothing is sent twice. */
+.global-loader{ background:transparent !important; }
+.global-loader .spinner{ display:none !important; }
+.global-loader.active::before, .global-loader.active::after{
+  content:""; position:fixed !important; top:0; height:3px; z-index:501;
+}
+.global-loader.active::before{ left:0; right:0; }
+html.eh-native-shell .global-loader.active::before,
+html.eh-native-shell .global-loader.active::after{ top:58px; }

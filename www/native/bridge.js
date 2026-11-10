@@ -119,6 +119,7 @@
       const go = tile.dataset.ehGo;
       closeMore();
       if (go === "logout") return $("logout-btn")?.click();
+      if (go === "delete") return openDeleteSheet();
       if (go === "admin") return void (location.href = "admin.html");
       if (go === "whatsapp") return;
       open(go);
@@ -154,7 +155,9 @@
         <div class="eh-list">
           ${wa ? `<a class="eh-row" data-eh-go="whatsapp" href="${wa}" target="_blank" rel="noopener">${ICON.chat}<span>Chat with support on WhatsApp</span></a>` : ""}
           ${admin ? `<button type="button" class="eh-row" data-eh-go="admin">${svg('<path d="M12 2 3 6v6c0 5 3.8 8.5 9 10 5.2-1.5 9-5 9-10V6l-9-4z"/>')}<span>Admin panel</span></button>` : ""}
+          <a class="eh-row" href="privacy.html">${svg('<path d="M12 2 3 6v6c0 5 3.8 8.5 9 10 5.2-1.5 9-5 9-10V6l-9-4z"/><path d="M9 12l2 2 4-4"/>')}<span>Privacy policy</span></a>
           <button type="button" class="eh-row eh-danger" data-eh-go="logout">${ICON.logout}<span>Log out</span></button>
+          <button type="button" class="eh-row eh-danger" data-eh-go="delete">${svg('<path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M6 6l1 14h10l1-14"/>')}<span>Delete account</span></button>
         </div>
       </div>`;
     $("eh-more-close").addEventListener("click", closeMore);
@@ -171,6 +174,38 @@
     $("eh-more").classList.remove("open");
     document.documentElement.classList.remove("eh-more-open");
     highlightTab();
+  }
+
+  // Account deletion request (Google Play requires this inside the app).
+  function openDeleteSheet() {
+    const wrap = document.createElement("div");
+    wrap.className = "ql-sheet-wrap";
+    wrap.innerHTML = `
+      <form class="ql-sheet" autocomplete="off">
+        <h3>Delete your account</h3>
+        <p class="muted">We'll contact you within 7 days to pay out any money left in your wallet, then delete your account and personal details. This can't be undone.</p>
+        <div class="field"><label for="del-reason">Why are you leaving? (optional)</label><input id="del-reason" maxlength="500" /></div>
+        <div class="field"><label for="del-password">Your password</label><input id="del-password" type="password" required autocomplete="current-password" /></div>
+        <button type="submit" class="btn btn-block" style="background:#C0392B;color:#fff;">Request deletion</button>
+        <button type="button" class="btn btn-ghost btn-block" id="ql-later">Cancel</button>
+      </form>`;
+    document.body.appendChild(wrap);
+    wrap.querySelector("#ql-later").addEventListener("click", () => wrap.remove());
+    wrap.querySelector("form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = e.target.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      try {
+        const r = await Api.post("/auth/delete-request", { password: $("del-password").value, reason: $("del-reason").value });
+        wrap.remove();
+        window.QuickLogin?.clear();
+        toast(r.message);
+      } catch (err) {
+        toast(err.message, "error");
+        btn.disabled = false;
+      }
+    });
+    $("del-password").focus();
   }
 
   function escapeHtml(s) {
@@ -218,6 +253,7 @@
   function wireBackButton() {
     if (!window.Capacitor?.Plugins?.App) return;
     window.Capacitor.Plugins.App.addListener("backButton", () => {
+      if (window.AppPay?.isOpen()) return; // a payment is in progress
       if (moreOpen()) return closeMore();
       const sheet = document.querySelector(".ql-sheet-wrap");
       if (sheet) return sheet.querySelector("#ql-later")?.click();

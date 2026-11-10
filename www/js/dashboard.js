@@ -305,6 +305,16 @@
             loadHomeTransactions();
             return;
           }
+          if (window.AppPay) {
+            // Android app: pay inside the app and show the result there.
+            localStorage.removeItem('pending_funding_ref');
+            closeModal();
+            const v = await window.AppPay.pay(data, { title, amount: price, rows: [['Service', title], ...rows] });
+            if (v?.user) setUser(v.user);
+            onDone?.();
+            loadHomeTransactions();
+            return;
+          }
           location.href = data.authorization_url;
           return;
         }
@@ -820,6 +830,12 @@
         setUser(verify.user);
         toast('Wallet funded successfully.');
         e.target.reset();
+        loadHomeTransactions();
+      } else if (window.AppPay) {
+        // Android app: pay inside the app and show the result there.
+        const v = await window.AppPay.pay(init, { title: 'Fund wallet', amount: Number(amount), rows: [['Service', 'Wallet funding']] });
+        if (v?.user) setUser(v.user);
+        if (v?.state === 'success') e.target.reset();
         loadHomeTransactions();
       } else if (init.authorization_url) {
         // Send the customer to Flutterwave's secure checkout. They come back to
