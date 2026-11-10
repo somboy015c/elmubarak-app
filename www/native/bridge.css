@@ -6,13 +6,17 @@ html.eh-native-shell body{ padding-bottom: env(safe-area-inset-bottom); }
 /* keep content clear of the fixed bottom nav */
 html.eh-native-shell .view-body{ padding-bottom: calc(var(--eh-bottomnav-h) + 18px) !important; }
 
-/* smoother, native-style view transitions layered on top of your own show/hide logic */
-html.eh-native-shell .view{ transition: opacity 220ms cubic-bezier(.2,.8,.2,1), transform 220ms cubic-bezier(.2,.8,.2,1); }
-html.eh-native-shell .view.eh-entering{ opacity: 0; transform: translateY(10px); }
-html.eh-native-shell .view.active{ opacity: 1; transform: translateY(0); }
+/* native-style entrance: runs each time a view is shown, leaves no transform behind */
+html.eh-native-shell .view.active{ animation: eh-view-in 220ms cubic-bezier(.2,.8,.2,1); }
+@keyframes eh-view-in{ from{ opacity:0; transform: translateY(10px); } to{ opacity:1; transform:none; } }
 
 /* your sidebar already behaves like a drawer on mobile — just round it off a bit */
-html.eh-native-shell .sidebar{ border-top-right-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 0 40px rgba(0,0,0,.25); }
+html.eh-native-shell .sidebar.open{ box-shadow: 0 0 40px rgba(0,0,0,.25); }
+
+/* tablets: centre the forms instead of leaving them against the left edge */
+@media (min-width: 560px){
+  html.eh-native-shell .view:not(#view-home):not(#view-transactions){ max-width: 640px; margin: 0 auto; }
+}
 
 /* ---------- BOTTOM NAV (new) ---------- */
 .eh-bottom-nav{
@@ -25,7 +29,7 @@ html.eh-native-shell .sidebar{ border-top-right-radius: 20px; border-bottom-righ
   padding:8px 2px; border:none; background:none; color:#7A8494; font-size:11px; font-weight:600;
   transition: color 160ms;
 }
-.eh-nav-item .eh-ic{ font-size:19px; transition: transform 220ms cubic-bezier(.2,.8,.2,1); }
+.eh-nav-item .eh-ic{ display:flex; height:22px; transition: transform 220ms cubic-bezier(.2,.8,.2,1); }
 .eh-nav-item.eh-active{ color: var(--eh-green); }
 .eh-nav-item.eh-active .eh-ic{ transform: translateY(-3px) scale(1.15); color: var(--eh-green); }
 

@@ -7,11 +7,12 @@
   // Which of your existing sidebar views show up as bottom-tab shortcuts.
   // Edit this list if you'd rather surface different views (any data-view
   // value that exists in dashboard.html works).
+  const svg = (d) => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
   const TABS = [
-    { view: "home", label: "Home", icon: "🏠" },
-    { view: "fund", label: "Fund", icon: "💳" },
-    { view: "transactions", label: "History", icon: "🧾" },
-    { view: "settings", label: "Profile", icon: "👤" }
+    { view: "home", label: "Home", icon: svg('<path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/>') },
+    { view: "fund", label: "Fund", icon: svg('<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>') },
+    { view: "transactions", label: "History", icon: svg('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>') },
+    { view: "settings", label: "Profile", icon: svg('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>') }
   ];
 
   function buildBottomNav() {
@@ -53,20 +54,15 @@
       });
     });
 
-    // Light entrance animation whenever a .view becomes active, regardless
-    // of how your own code toggles it.
-    const observer = new MutationObserver(muts => {
-      muts.forEach(m => {
-        if (m.attributeName !== "class") return;
-        const el = m.target;
-        if (el.classList.contains("view") && el.classList.contains("active")) {
-          el.classList.add("eh-entering");
-          requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove("eh-entering")));
-        }
-      });
+    // Keep the bottom nav highlight right when a view is opened from a home
+    // tile or by your own code. (The entrance animation is pure CSS now: the
+    // old class-watching version re-triggered itself forever and froze the app.)
+    const observer = new MutationObserver(() => {
+      const active = document.querySelector(".view.active");
+      if (active) highlightTab(active.id.replace("view-", ""));
     });
     document.querySelectorAll(".view").forEach(el =>
-      observer.observe(el, { attributes: true }));
+      observer.observe(el, { attributes: true, attributeFilter: ["class"] }));
   }
 
   // Android hardware back button: close the drawer if open, else go back to

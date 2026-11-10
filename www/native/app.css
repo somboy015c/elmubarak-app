@@ -1,0 +1,12 @@
+/* App-only fixes added to every synced page (see scripts/inject-bridge.js). */
+
+/* The "back to home" button leads to the website's landing page, which the app doesn't have. */
+.home-float-btn{ display:none !important; }
+
+/* Keep the WhatsApp button clear of the bottom nav and of each page's last link. */
+.whatsapp-float-btn{ bottom: calc(18px + env(safe-area-inset-bottom)) !important; width:48px !important; height:48px !important; }
+html.eh-native-shell .whatsapp-float-btn{ bottom: calc(var(--eh-bottomnav-h, 66px) + 14px + env(safe-area-inset-bottom)) !important; }
+.auth-form-side{ padding-bottom: 84px; }
+
+/* the closed menu sits just off the right edge; its shadow was showing as a grey strip */
+.sidebar:not(.open){ box-shadow: none !important; }
