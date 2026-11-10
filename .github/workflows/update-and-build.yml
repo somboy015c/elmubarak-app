@@ -142,11 +142,11 @@ jobs:
         run: |
           TAG="latest-build"
           if gh release view "$TAG" >/dev/null 2>&1; then
-            gh release upload "$TAG" Elmubarak-DH.apk --clobber
+            gh release upload "$TAG" Elmubarak-DH.apk Elmubarak-DH.aab --clobber
             gh release edit "$TAG" --title "Elmubarak Digital Hub — build ${{ github.run_number }}" \
               --notes "Auto-built from ${{ env.SOURCE_REPO }}@${{ steps.source.outputs.latest_sha }} on $(date -u +'%Y-%m-%d %H:%M UTC')."
           else
-            gh release create "$TAG" Elmubarak-DH.apk \
+            gh release create "$TAG" Elmubarak-DH.apk Elmubarak-DH.aab \
               --title "Elmubarak Digital Hub — build ${{ github.run_number }}" \
               --notes "Auto-built from ${{ env.SOURCE_REPO }}@${{ steps.source.outputs.latest_sha }} on $(date -u +'%Y-%m-%d %H:%M UTC')."
           fi
