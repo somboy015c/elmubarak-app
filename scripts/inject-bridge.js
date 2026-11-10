@@ -9,8 +9,12 @@ const css = (f) => `<link rel="stylesheet" href="native/${f}" />`;
 const js = (f) => `<script src="native/${f}"></script>`;
 
 const PAGES = {
-  "dashboard.html": { head: [css("bridge.css"), css("quick-login.css")], body: [js("bridge.js"), js("quick-login.js")] },
-  "login.html": { head: [], body: [js("quick-login.js")] }
+  "dashboard.html": { head: [css("app.css"), css("bridge.css"), css("quick-login.css")], body: [js("bridge.js"), js("quick-login.js")] },
+  "login.html": { head: [css("app.css")], body: [js("quick-login.js")] },
+  "register.html": { head: [css("app.css")], body: [] },
+  "forgot-password.html": { head: [css("app.css")], body: [] },
+  "reset-password.html": { head: [css("app.css")], body: [] },
+  "verify-email.html": { head: [css("app.css")], body: [] }
 };
 
 for (const [page, tags] of Object.entries(PAGES)) {
