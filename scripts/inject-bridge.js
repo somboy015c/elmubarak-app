@@ -14,7 +14,8 @@ const PAGES = {
   "register.html": { head: [css("app.css")], body: [] },
   "forgot-password.html": { head: [css("app.css")], body: [] },
   "reset-password.html": { head: [css("app.css")], body: [] },
-  "verify-email.html": { head: [css("app.css")], body: [] }
+  "verify-email.html": { head: [css("app.css")], body: [] },
+  "admin.html": { head: [css("app.css")], body: [] }
 };
 
 for (const [page, tags] of Object.entries(PAGES)) {
