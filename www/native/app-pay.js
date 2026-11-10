@@ -10,7 +10,6 @@
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const naira = (n) => "₦" + Number(n || 0).toLocaleString("en-NG", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-  const haptic = (style) => { try { window.Capacitor?.Plugins?.Haptics?.impact({ style }); } catch (e) {} };
 
   const ICONS = {
     lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
@@ -164,7 +163,6 @@
         extra: tokenHtml(order) + rowsHtml(rows),
         actions: `${again}<button type="button" class="ap-btn" data-ap="done">Done</button>`
       }, ctx);
-      haptic(tone === "success" ? "medium" : "heavy");
 
       screen.querySelectorAll(".ap-copy").forEach((b) => b.addEventListener("click", async () => {
         try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = "Copied"; } catch (e) {}

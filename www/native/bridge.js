@@ -43,7 +43,6 @@
     airtime2cash: "Airtime to cash", notices: "Notices", settings: "Profile & settings"
   };
 
-  const haptic = () => { try { window.Capacitor?.Plugins?.Haptics?.impact({ style: "light" }); } catch (e) {} };
   const navItem = (view) => document.querySelector(`.sidebar .nav-item[data-view="${view}"]`);
   const activeView = () => (document.querySelector(".view.active")?.id || "view-home").replace("view-", "");
   const open = (view) => { navItem(view)?.click(); window.scrollTo(0, 0); };
@@ -58,8 +57,8 @@
       <h1 class="eh-top-title" id="eh-title"></h1>
       <button type="button" class="eh-icon-btn" id="eh-bell" aria-label="Notices">${ICON.bell}<span class="eh-dot" id="eh-bell-dot"></span></button>`;
     document.querySelector(".main-area")?.prepend(bar);
-    $("eh-back").addEventListener("click", () => { haptic(); open("home"); });
-    $("eh-bell").addEventListener("click", () => { haptic(); open("notices"); });
+    $("eh-back").addEventListener("click", () => { open("home"); });
+    $("eh-bell").addEventListener("click", () => { open("notices"); });
 
     // Mirror the website's unread count onto the bell.
     const dot = $("notice-dot");
@@ -90,7 +89,6 @@
     nav.addEventListener("click", (e) => {
       const btn = e.target.closest(".eh-nav-item");
       if (!btn) return;
-      haptic();
       if (btn.dataset.ehView === "more") return openMore();
       closeMore();
       open(btn.dataset.ehView);
@@ -115,7 +113,6 @@
     el.addEventListener("click", (e) => {
       const tile = e.target.closest("[data-eh-go]");
       if (!tile) return;
-      haptic();
       const go = tile.dataset.ehGo;
       closeMore();
       if (go === "logout") return $("logout-btn")?.click();

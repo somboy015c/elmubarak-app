@@ -913,6 +913,7 @@
 
   async function loadBanks() {
     if (banksLoaded) return;
+    if (siteStatus && siteStatus.services.withdrawal === false) return; // section is hidden while withdrawals are off
     try {
       const { banks } = await Api.get('/security/banks');
       bankSelect.innerHTML = banks
@@ -920,6 +921,7 @@
         .join('');
       banksLoaded = true;
     } catch (err) {
+      if (err.code === 'SERVICE_DISABLED') return;
       toast(err.message, 'error');
     }
   }
